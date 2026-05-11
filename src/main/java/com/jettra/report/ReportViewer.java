@@ -54,6 +54,16 @@ public class ReportViewer extends Modal {
                 .setOnclick("location.href='?action=report&format=pdf&print=true'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
         }
         
+        SelectOne sizeSelect = new SelectOne("sizeSelect")
+            .setId("sizeSelect_" + uniqueId)
+            .addOption("100%", "Maximizar")
+            .addOption("800px", "Original")
+            .addOption("75%", "75%")
+            .addOption("50%", "50%")
+            .setProperty("onchange", "var size = this.value; var modalContent = document.getElementById('reportModal_" + uniqueId + "').querySelector('.j-modal-content'); if(modalContent) { modalContent.style.width = size; modalContent.style.maxWidth = size; }");
+            
+        toolbar.add(sizeSelect);
+        
         Button closeBtn = new Button("Cerrar")
             .setBackgroundColor("#30363d")
             .setOnclick("document.getElementById('reportModal_" + uniqueId + "').style.display='none';");
