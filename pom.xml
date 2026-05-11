@@ -20,7 +20,18 @@
             <artifactId>JettraWUI</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
-        <!-- Additional libraries for export formats would go here (e.g. iText, POI) -->
+        <!-- PDF Generation -->
+        <dependency>
+            <groupId>com.lowagie</groupId>
+            <artifactId>itext</artifactId>
+            <version>2.1.7</version>
+        </dependency>
+        <!-- Excel/Word Generation -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.3</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,5 +1,9 @@
 package com.jettra.report;
 
+import com.lowagie.text.*;
+import com.lowagie.text.pdf.*;
+import java.io.FileOutputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +22,7 @@ public class Report {
     private Detail detail = new Detail();
     private Summary summary = new Summary();
     private Footer footer = new Footer();
+    private ViewerOptions viewerOptions = new ViewerOptions();
 
     public Report(String title) {
         this.title = title;
@@ -32,8 +37,29 @@ public class Report {
     public Detail getDetail() { return detail; }
     public Summary getSummary() { return summary; }
     public Footer getFooter() { return footer; }
+    public ViewerOptions getViewerOptions() { return viewerOptions; }
 
     // Nested classes for report sections
+    
+    public static class ViewerOptions {
+        private boolean showViewer = true;
+        private boolean allowPrint = true;
+        private boolean allowPdf = true;
+        private boolean allowExcel = true;
+        private boolean allowCsv = true;
+
+        public ViewerOptions setShowViewer(boolean showViewer) { this.showViewer = showViewer; return this; }
+        public ViewerOptions setAllowPrint(boolean allowPrint) { this.allowPrint = allowPrint; return this; }
+        public ViewerOptions setAllowPdf(boolean allowPdf) { this.allowPdf = allowPdf; return this; }
+        public ViewerOptions setAllowExcel(boolean allowExcel) { this.allowExcel = allowExcel; return this; }
+        public ViewerOptions setAllowCsv(boolean allowCsv) { this.allowCsv = allowCsv; return this; }
+
+        public boolean isShowViewer() { return showViewer; }
+        public boolean isAllowPrint() { return allowPrint; }
+        public boolean isAllowPdf() { return allowPdf; }
+        public boolean isAllowExcel() { return allowExcel; }
+        public boolean isAllowCsv() { return allowCsv; }
+    }
 
     public static class PageSettings {
         public enum Orientation { PORTRAIT, LANDSCAPE }
@@ -187,9 +213,101 @@ public class Report {
 
     // Export methods
 
-    public void exportToPdf(String path) { /* Implementation */ }
-    public void exportToWord(String path) { /* Implementation */ }
-    public void exportToExcel(String path) { /* Implementation */ }
+    public void exportToPdf(String path) {
+        Document document = new Document(
+            pageSettings.pageSize == PageSettings.PageSize.LETTER ? PageSize.LETTER : PageSize.A4,
+            pageSettings.marginLeft, pageSettings.marginRight, pageSettings.marginTop, pageSettings.marginBottom
+        );
+        if (pageSettings.orientation == PageSettings.Orientation.LANDSCAPE) {
+            document.setPageSize(document.getPageSize().rotate());
+        }
+
+        try {
+            PdfWriter.getInstance(document, new FileOutputStream(path));
+            document.open();
+
+            // Header Section
+            for (ReportElement el : header.getElements()) {
+                addPdfElement(document, el, null);
+            }
+
+            // Detail Section
+            // Logic: If there is a Table, we render it once (as it contains its own data loop)
+            // If there are other elements, we render them per row.
+            boolean tableRendered = false;
+            for (ReportElement el : detail.getElements()) {
+                if (el instanceof Table) {
+                    addPdfElement(document, el, null);
+                    tableRendered = true;
+                }
+            }
+            
+            if (!tableRendered) {
+                for (Object row : data) {
+                    for (ReportElement el : detail.getElements()) {
+                        addPdfElement(document, el, row);
+                    }
+                }
+            }
+
+            // Summary Section
+            for (ReportElement el : summary.getElements()) {
+                addPdfElement(document, el, null);
+            }
+
+            // Footer Section
+            for (ReportElement el : footer.getElements()) {
+                addPdfElement(document, el, null);
+            }
+
+            document.close();
+        } catch (Exception e) {
+            System.err.println("Error generating PDF: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void addPdfElement(Document doc, ReportElement el, Object row) throws Exception {
+        if (el instanceof TextElement tel) {
+            Font font = new Font(Font.HELVETICA, 12, tel.bold ? Font.BOLD : Font.NORMAL);
+            doc.add(new Paragraph(tel.getExpression(), font));
+        } else if (el instanceof Table table) {
+            PdfPTable pdfTable = new PdfPTable(table.getColumns().size());
+            pdfTable.setWidthPercentage(100);
+            
+            // Headers
+            for (Column col : table.getColumns()) {
+                pdfTable.addCell(new Phrase(col.getHeader(), new Font(Font.HELVETICA, 10, Font.BOLD)));
+            }
+            
+            // If we are in the detail section and el is a table, 
+            // the user probably wants to render the WHOLE data list in this table.
+            // But usually detail section renders ONE row at a time.
+            // In JettraReport, Table element in Detail section means "Render all data here".
+            if (data != null && !data.isEmpty()) {
+                for (Object item : data) {
+                    for (Column col : table.getColumns()) {
+                        Object val = getFieldValue(item, col.getDetailExpression());
+                        pdfTable.addCell(new Phrase(val != null ? val.toString() : "", new Font(Font.HELVETICA, 10)));
+                    }
+                }
+            }
+            doc.add(pdfTable);
+        }
+    }
+
+    private Object getFieldValue(Object obj, String expression) {
+        try {
+            Field field = obj.getClass().getDeclaredField(expression);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (Exception e) {
+            return expression; // Return as literal if field not found
+        }
+    }
+
+    public void exportToWord(String path) { /* Implementation with POI */ }
+    public void exportToExcel(String path) { /* Implementation with POI */ }
     public void exportToCsv(String path) { /* Implementation */ }
     public void exportToTxt(String path) { /* Implementation */ }
 }

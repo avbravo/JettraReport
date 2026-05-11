@@ -137,6 +137,16 @@ public class DeportesGroupedExample {
 - **Groups**: When a `Group` is added, the engine automatically detects changes in the `groupByExpression` value to trigger group headers and footers.
 - **Subtotals**: They are attached to groups to provide automatic calculations like `SUM`, `COUNT`, or `AVG` over the grouped data.
 - **Page Configuration**: Accessible via `report.getPageSettings()`.
+- **Viewer Options**: Control the behavior of the built-in report viewer UI using `report.getViewerOptions()`. You can toggle the viewer itself, and enable/disable individual export options (Print, PDF, Excel, CSV).
+
+```java
+report.getViewerOptions()
+      .setShowViewer(true)
+      .setAllowPrint(true)
+      .setAllowPdf(true)
+      .setAllowExcel(false)
+      .setAllowCsv(true);
+```
 
 ## Visual Designer
 
