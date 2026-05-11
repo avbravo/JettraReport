@@ -39,6 +39,10 @@ public class Report {
     public Footer getFooter() { return footer; }
     public ViewerOptions getViewerOptions() { return viewerOptions; }
 
+    public ReportViewer createViewer(String uniqueId) {
+        return new ReportViewer(this, uniqueId);
+    }
+
     // Nested classes for report sections
     
     public static class ViewerOptions {
