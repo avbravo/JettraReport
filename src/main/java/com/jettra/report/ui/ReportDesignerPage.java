@@ -23,6 +23,9 @@ public class ReportDesignerPage extends JettraDashboardPage {
         Div toolbar = new Div().setStyle("width", "250px").setStyle("background", "var(--jettra-bg-secondary)").setStyle("padding", "15px");
         toolbar.add(new Header(4, "Report Elements"));
         toolbar.add(createToolButton("Text Field", "🔤"));
+        toolbar.add(createToolButton("Date Field", "📅"));
+        toolbar.add(createToolButton("Numeric Field", "🔢"));
+        toolbar.add(createToolButton("Table", "▦"));
         toolbar.add(createToolButton("Image", "🖼️"));
         toolbar.add(createToolButton("Chart", "📊"));
         toolbar.add(createToolButton("Subreport", "📋"));

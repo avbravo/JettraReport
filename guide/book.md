@@ -22,33 +22,121 @@ Add the following dependency to your project:
 </dependency>
 ```
 
-## Creating a Simple Report
+## Practical Examples
+
+### 1. Complete Report with Collection (Frutas)
+
+This example shows how to generate a report from a collection of 25 objects of type `Fruta`.
 
 ```java
 import com.jettra.report.Report;
+import java.util.ArrayList;
+import java.util.List;
 
-Report report = new Report("Sales Summary 2026");
+public class FrutaReportExample {
+    
+    // 1. Define the data model
+    public record Fruta(int id, String nombre, String categoria, double precio) {}
 
-// Add elements to sections
-report.getHeader().addElement(new Report.TextElement("Global Sales Report"));
+    public static void main(String[] args) {
+        // 2. Create the data list (25 elements)
+        List<Fruta> listaFrutas = new ArrayList<>();
+        for (int i = 1; i <= 25; i++) {
+            listaFrutas.add(new Fruta(i, "Fruta " + i, "Cítricos", 1.5 * i));
+        }
 
-// Add a chart to the summary
-Report.Chart chart = new Report.Chart(Report.Chart.Type.BAR);
-report.getSummary().addChart(chart);
+        // 3. Configure the Report
+        Report report = new Report("Inventario de Frutas");
+        report.setData(listaFrutas); 
+        
+        // 4. Page Settings
+        report.getPageSettings()
+              .setPageSize(Report.PageSettings.PageSize.A4)
+              .setOrientation(Report.PageSettings.Orientation.PORTRAIT);
 
-// Export to PDF
-report.exportToPdf("reports/sales_summary.pdf");
+        // 5. Define Table Structure
+        Report.Table table = new Report.Table();
+        table.addColumn(new Report.Column("ID", "id", 30));
+        table.addColumn(new Report.Column("Nombre", "nombre", 150));
+        table.addColumn(new Report.Column("Categoría", "categoria", 100));
+        table.addColumn(new Report.Column("Precio", "precio", 80));
+
+        // 6. Add elements to sections
+        report.getHeader().addElement(new Report.TextElement("REPORTE DE INVENTARIO"));
+        report.getDetail().addElement(table);
+        report.getFooter().addElement(new Report.TextElement("Pag: " + Report.PAGINATION_VAR));
+
+        // 7. Export to multiple formats
+        report.exportToPdf("inventario_frutas.pdf");
+        System.out.println("Reporte generado exitosamente.");
+    }
+}
 ```
 
-## Report Sections
+### 2. Complete Grouped Report (Deportes por Categoría)
 
-The `Report` class structure is hierarchical:
+This example demonstrates how to use the `Group` section to organize sports by their category with subtotals.
 
-- **Header**: Appears at the top of every page.
-- **Detail**: The main content area, supports subreports for nested data.
-- **Group**: Allows grouping data with specific `GroupHeader` and `GroupFooter`.
-- **Summary**: Appears at the end of the report, ideal for charts and totals.
-- **Footer**: Appears at the bottom of every page (pagination info).
+```java
+import com.jettra.report.Report;
+import java.util.List;
+
+public class DeportesGroupedExample {
+    
+    // 1. Data Models
+    public record Deporte(String nombre, String categoria) {}
+
+    public static void main(String[] args) {
+        // 2. Create sample data
+        List<Deporte> deportes = List.of(
+            new Deporte("Fútbol", "Equipo"),
+            new Deporte("Baloncesto", "Equipo"),
+            new Deporte("Voleibol", "Equipo"),
+            new Deporte("Tenis", "Individual"),
+            new Deporte("Natación", "Individual"),
+            new Deporte("Atletismo", "Individual")
+        );
+
+        // 3. Configure Grouped Report
+        Report report = new Report("Catálogo de Deportes por Categoría");
+        report.setData(deportes);
+
+        // 4. Define a Group by 'categoria'
+        Report.Group group = new Report.Group();
+        group.setGroupByExpression("categoria");
+
+        // Add Header to the Group
+        group.getGroupHeader().addElement(new Report.TextElement("CATEGORÍA: $F{categoria}"));
+
+        // Add a Subtotal (COUNT) to the Group Footer
+        Report.Subtotal count = new Report.Subtotal();
+        count.setFieldExpression("nombre");
+        count.setFunction(Report.Subtotal.Function.COUNT);
+        group.getSubtotals().add(count);
+        
+        group.getGroupFooter().addElement(new Report.TextElement("Total de deportes en esta categoría: " + count));
+
+        report.getGroups().add(group);
+
+        // 5. Standard Detail
+        report.getDetail().addElement(new Report.TextElement(" -> Sport: $F{nombre}"));
+
+        // 6. Global Summary
+        report.getSummary().addElement(new Report.TextElement("FIN DEL REPORTE"));
+
+        // 7. Export
+        report.exportToPdf("deportes_agrupados.pdf");
+    }
+}
+```
+
+### Implementation Details
+
+- **Fluent API**: Use `getDetail()`, `getHeader()`, etc., to add elements to specific zones.
+- **Expressions**: The `$F{fieldName}` syntax is used by the engine to map list properties (from Records or POJOs) to report cells.
+- **Groups**: When a `Group` is added, the engine automatically detects changes in the `groupByExpression` value to trigger group headers and footers.
+- **Subtotals**: They are attached to groups to provide automatic calculations like `SUM`, `COUNT`, or `AVG` over the grouped data.
+- **Page Configuration**: Accessible via `report.getPageSettings()`.
 
 ## Visual Designer
 
