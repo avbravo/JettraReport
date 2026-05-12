@@ -311,7 +311,89 @@ public class Report {
     }
 
     public void exportToWord(String path) { /* Implementation with POI */ }
-    public void exportToExcel(String path) { /* Implementation with POI */ }
-    public void exportToCsv(String path) { /* Implementation */ }
+
+    public void exportToExcel(String path) {
+        try (org.apache.poi.xssf.streaming.SXSSFWorkbook workbook = new org.apache.poi.xssf.streaming.SXSSFWorkbook();
+             java.io.FileOutputStream out = new java.io.FileOutputStream(path)) {
+            
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Report");
+            Table table = null;
+            for (ReportElement el : detail.getElements()) {
+                if (el instanceof Table) {
+                    table = (Table) el;
+                    break;
+                }
+            }
+
+            if (table != null) {
+                int rowNum = 0;
+                // Header
+                org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(rowNum++);
+                org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
+                org.apache.poi.ss.usermodel.Font font = workbook.createFont();
+                font.setBold(true);
+                headerStyle.setFont(font);
+
+                for (int i = 0; i < table.getColumns().size(); i++) {
+                    org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(table.getColumns().get(i).getHeader());
+                    cell.setCellStyle(headerStyle);
+                }
+
+                // Data
+                if (data != null) {
+                    for (Object item : data) {
+                        org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
+                        for (int i = 0; i < table.getColumns().size(); i++) {
+                            Object val = getFieldValue(item, table.getColumns().get(i).getDetailExpression());
+                            row.createCell(i).setCellValue(val != null ? val.toString() : "");
+                        }
+                    }
+                }
+            }
+            workbook.write(out);
+            workbook.dispose();
+        } catch (Exception e) {
+            System.err.println("Error generating Excel: " + e.getMessage());
+        }
+    }
+
+    public void exportToCsv(String path) {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(path))) {
+            Table table = null;
+            for (ReportElement el : detail.getElements()) {
+                if (el instanceof Table) {
+                    table = (Table) el;
+                    break;
+                }
+            }
+
+            if (table != null) {
+                // Headers
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < table.getColumns().size(); i++) {
+                    sb.append("\"").append(table.getColumns().get(i).getHeader().replace("\"", "\"\"")).append("\"");
+                    if (i < table.getColumns().size() - 1) sb.append(",");
+                }
+                writer.println(sb.toString());
+
+                // Data
+                if (data != null) {
+                    for (Object item : data) {
+                        sb = new StringBuilder();
+                        for (int i = 0; i < table.getColumns().size(); i++) {
+                            Object val = getFieldValue(item, table.getColumns().get(i).getDetailExpression());
+                            sb.append("\"").append(val != null ? val.toString().replace("\"", "\"\"") : "").append("\"");
+                            if (i < table.getColumns().size() - 1) sb.append(",");
+                        }
+                        writer.println(sb.toString());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error generating CSV: " + e.getMessage());
+        }
+    }
+
     public void exportToTxt(String path) { /* Implementation */ }
 }
