@@ -56,11 +56,12 @@ public class ReportViewer extends Modal {
         
         SelectOne sizeSelect = new SelectOne("sizeSelect")
             .setId("sizeSelect_" + uniqueId)
-            .addOption("100%", "Maximizar")
-            .addOption("800px", "Original")
+            .addOption("100%", "Maximizar (100%)")
+            .addOption("800px", "Original (800px)")
             .addOption("75%", "75%")
             .addOption("50%", "50%")
-            .setProperty("onchange", "var size = this.value; var modalContent = document.getElementById('reportModal_" + uniqueId + "').querySelector('.j-modal-content'); if(modalContent) { modalContent.style.width = size; modalContent.style.maxWidth = size; }");
+            .addOption("25%", "25%")
+            .setProperty("onchange", "var size = this.value; var modal = document.getElementById('reportModal_" + uniqueId + "'); if(modal) { if(size === '100%') { modal.style.width = '95vw'; modal.style.height = '95vh'; modal.style.maxWidth = '95vw'; modal.style.maxHeight = '95vh'; } else { modal.style.width = size; modal.style.maxWidth = size; modal.style.height = 'auto'; modal.style.maxHeight = '90vh'; } }");
             
         toolbar.add(sizeSelect);
         
