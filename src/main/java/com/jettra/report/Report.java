@@ -135,21 +135,41 @@ public class Report {
 
     // Elements
 
-    public interface ReportElement {}
+    public interface ReportElement {
+        String getFontName();
+        int getFontSize();
+        boolean isBold();
+        String getFontColor();
+        void setFontName(String fontName);
+        void setFontSize(int fontSize);
+        void setBold(boolean bold);
+        void setFontColor(String fontColor);
+    }
 
-    public static class TextElement implements ReportElement {
+    public static abstract class AbstractReportElement implements ReportElement {
+        protected String fontName = "Helvetica";
+        protected int fontSize = 10;
+        protected boolean bold = false;
+        protected String fontColor = "#000000";
+
+        @Override public String getFontName() { return fontName; }
+        @Override public int getFontSize() { return fontSize; }
+        @Override public boolean isBold() { return bold; }
+        @Override public String getFontColor() { return fontColor; }
+        @Override public void setFontName(String fontName) { this.fontName = fontName; }
+        @Override public void setFontSize(int fontSize) { this.fontSize = fontSize; }
+        @Override public void setBold(boolean bold) { this.bold = bold; }
+        @Override public void setFontColor(String fontColor) { this.fontColor = fontColor; }
+    }
+
+    public static class TextElement extends AbstractReportElement {
         private String expression;
-        private String fontName = "SansSerif";
-        private int fontSize = 10;
-        private boolean bold = false;
         
         public TextElement(String expression) { this.expression = expression; }
         public String getExpression() { return expression; }
-        public void setBold(boolean bold) { this.bold = bold; }
-        public boolean isBold() { return bold; }
     }
 
-    public static class DateElement implements ReportElement {
+    public static class DateElement extends AbstractReportElement {
         private String expression;
         private String pattern = "dd/MM/yyyy";
         
@@ -162,7 +182,7 @@ public class Report {
         public String getPattern() { return pattern; }
     }
 
-    public static class NumericElement implements ReportElement {
+    public static class NumericElement extends AbstractReportElement {
         private String expression;
         private String format = "#,##0.00";
         
@@ -179,6 +199,15 @@ public class Report {
         private List<Column> columns = new ArrayList<>();
         private String datasourceExpression;
         
+        @Override public String getFontName() { return "Helvetica"; }
+        @Override public int getFontSize() { return 10; }
+        @Override public boolean isBold() { return false; }
+        @Override public String getFontColor() { return "#000000"; }
+        @Override public void setFontName(String fontName) {}
+        @Override public void setFontSize(int fontSize) {}
+        @Override public void setBold(boolean bold) {}
+        @Override public void setFontColor(String fontColor) {}
+
         public void addColumn(Column column) { columns.add(column); }
         public List<Column> getColumns() { return columns; }
     }
@@ -187,6 +216,10 @@ public class Report {
         private String header;
         private String detailExpression;
         private int width;
+        private String fontName = "Helvetica";
+        private int fontSize = 10;
+        private boolean bold = false;
+        private String fontColor = "#000000";
         
         public Column(String header, String detailExpression, int width) {
             this.header = header;
@@ -196,19 +229,46 @@ public class Report {
         public String getHeader() { return header; }
         public String getDetailExpression() { return detailExpression; }
         public int getWidth() { return width; }
+
+        public String getFontName() { return fontName; }
+        public Column setFontName(String fontName) { this.fontName = fontName; return this; }
+        public int getFontSize() { return fontSize; }
+        public Column setFontSize(int fontSize) { this.fontSize = fontSize; return this; }
+        public boolean isBold() { return bold; }
+        public Column setBold(boolean bold) { this.bold = bold; return this; }
+        public String getFontColor() { return fontColor; }
+        public Column setFontColor(String fontColor) { this.fontColor = fontColor; return this; }
     }
 
-    public static class ImageElement implements ReportElement {
+    public static class ImageElement extends AbstractReportElement {
         private String path;
         public ImageElement(String path) { this.path = path; }
         public String getPath() { return path; }
     }
 
     public static class Chart {
-        public enum Type { BAR, PIE, LINE }
+        public enum Type { BAR, PIE, LINE, RADAR, DOUGHNUT }
         private Type type;
-        private String datasetExpression;
+        private String title;
+        private String[] labels;
+        private List<Dataset> datasets = new ArrayList<>();
+
+        public static class Dataset {
+            public String label;
+            public Number[] data;
+            public String[] backgroundColor;
+            public Dataset(String label, Number[] data) { this.label = label; this.data = data; }
+        }
+
         public Chart(Type type) { this.type = type; }
+        public Chart setTitle(String title) { this.title = title; return this; }
+        public Chart setLabels(String... labels) { this.labels = labels; return this; }
+        public Chart addDataset(String label, Number[] data) { datasets.add(new Dataset(label, data)); return this; }
+        
+        public Type getType() { return type; }
+        public String getTitle() { return title; }
+        public String[] getLabels() { return labels; }
+        public List<Dataset> getDatasets() { return datasets; }
     }
 
     public static class Subtotal {

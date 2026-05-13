@@ -42,21 +42,26 @@ public class JettraPdfExporter {
             StringBuilder stream = new StringBuilder();
             Cursor cursor = new Cursor();
 
+            Report.PageSettings settings = report.getPageSettings();
+            boolean isLandscape = settings.getOrientation() == Report.PageSettings.Orientation.LANDSCAPE;
+            int width = isLandscape ? 842 : 595;
+            int height = isLandscape ? 595 : 842;
+
             stream.append("BT\n");
             
             // Header: Date and Time
             stream.append("/F1 10 Tf\n");
+            stream.append("0 g\n"); // Reset color to black
             String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-            cursor.moveTo(stream, 430, 810);
+            cursor.moveTo(stream, width - 150, height - 30);
             stream.append("(").append(escapePdf("Fecha: " + now)).append(") Tj\n");
 
             // Footer: Page Number
-            cursor.moveTo(stream, 280, 30);
+            cursor.moveTo(stream, width / 2 - 20, 30);
             stream.append("(").append(escapePdf("Página 1")).append(") Tj\n");
 
-            // Body Content
-            stream.append("/F1 12 Tf\n");
-            cursor.moveTo(stream, 50, 780);
+            // Start Body
+            cursor.moveTo(stream, settings.getMarginLeft(), height - settings.getMarginTop() - 20);
 
             // Header Elements
             for (Report.ReportElement el : report.getHeader().getElements()) {
@@ -68,7 +73,10 @@ public class JettraPdfExporter {
                 addPdfElement(stream, cursor, el, null, report.getData());
             }
 
-            // Summary Section
+            // Summary Section (Charts)
+            for (Report.Chart chart : report.getSummary().getCharts()) {
+                addChartPlaceholder(stream, cursor, chart);
+            }
             for (Report.ReportElement el : report.getSummary().getElements()) {
                 addPdfElement(stream, cursor, el, null, report.getData());
             }
@@ -89,19 +97,22 @@ public class JettraPdfExporter {
             PdfObject pages = new PdfObject(nextId++, "<< /Type /Pages /Kids [ " + (nextId) + " 0 R ] /Count 1 >>");
             objects.add(pages);
             
-            PdfObject page = new PdfObject(nextId++, "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 " + (nextId + 1) + " 0 R >> >> /Contents " + (nextId) + " 0 R /MediaBox [ 0 0 595 842 ] >>");
+            PdfObject page = new PdfObject(nextId++, "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 " + (nextId + 1) + " 0 R /F2 " + (nextId + 2) + " 0 R >> >> /Contents " + (nextId) + " 0 R /MediaBox [ 0 0 " + width + " " + height + " ] >>");
             objects.add(page);
             
             PdfObject contents = new PdfObject(nextId++, "<< /Length " + streamContent.length() + " >>\nstream\n" + streamContent + "endstream");
             objects.add(contents);
             
-            PdfObject font = new PdfObject(nextId++, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
-            objects.add(font);
+            PdfObject font1 = new PdfObject(nextId++, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+            objects.add(font1);
+
+            PdfObject font2 = new PdfObject(nextId++, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+            objects.add(font2);
 
             long currentOffset = 0;
-            String header = "%PDF-1.4\n";
-            fos.write(header.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
-            currentOffset += header.length();
+            String pdfHeader = "%PDF-1.4\n";
+            fos.write(pdfHeader.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+            currentOffset += pdfHeader.length();
 
             for (PdfObject obj : objects) {
                 obj.offset = currentOffset;
@@ -130,41 +141,88 @@ public class JettraPdfExporter {
         }
     }
 
+    private static void applyStyle(StringBuilder stream, Report.ReportElement el) {
+        String font = "F1";
+        if (el.isBold()) font = "F2";
+        stream.append("/").append(font).append(" ").append(el.getFontSize()).append(" Tf\n");
+        
+        String hexColor = el.getFontColor();
+        if (hexColor != null && hexColor.startsWith("#")) {
+            try {
+                int r = Integer.valueOf(hexColor.substring(1, 3), 16);
+                int g = Integer.valueOf(hexColor.substring(3, 5), 16);
+                int b = Integer.valueOf(hexColor.substring(5, 7), 16);
+                stream.append(String.format("%.2f %.2f %.2f rg\n", r/255.0, g/255.0, b/255.0));
+            } catch (Exception e) {
+                stream.append("0 g\n");
+            }
+        } else {
+            stream.append("0 g\n");
+        }
+    }
+
+    private static void applyColumnStyle(StringBuilder stream, Report.Column col) {
+        String font = col.isBold() ? "F2" : "F1";
+        stream.append("/").append(font).append(" ").append(col.getFontSize()).append(" Tf\n");
+        String hexColor = col.getFontColor();
+        if (hexColor != null && hexColor.startsWith("#")) {
+            try {
+                int r = Integer.valueOf(hexColor.substring(1, 3), 16);
+                int g = Integer.valueOf(hexColor.substring(3, 5), 16);
+                int b = Integer.valueOf(hexColor.substring(5, 7), 16);
+                stream.append(String.format("%.2f %.2f %.2f rg\n", r/255.0, g/255.0, b/255.0));
+            } catch (Exception e) {
+                stream.append("0 g\n");
+            }
+        } else {
+            stream.append("0 g\n");
+        }
+    }
+
     private static void addPdfElement(StringBuilder stream, Cursor cursor, Report.ReportElement el, Object row, List<?> data) {
         if (el instanceof Report.TextElement tel) {
+            applyStyle(stream, tel);
             stream.append("(").append(escapePdf(tel.getExpression())).append(") Tj\n");
             cursor.move(stream, 0, -15);
         } else if (el instanceof Report.Table table) {
             float startX = cursor.x;
             // Table Header
-            stream.append("/F1 10 Tf\n");
+            stream.append("/F2 10 Tf\n"); // Bold headers
+            stream.append("0 g\n");
             for (Report.Column col : table.getColumns()) {
                 stream.append("(").append(escapePdf(col.getHeader())).append(") Tj\n");
-                cursor.move(stream, 100, 0);
+                cursor.move(stream, col.getWidth(), 0);
             }
             cursor.moveTo(stream, startX, cursor.y - 15);
             
             // Table Data
-            stream.append("/F1 10 Tf\n");
             if (data != null) {
                 for (Object item : data) {
                     for (Report.Column col : table.getColumns()) {
+                        applyColumnStyle(stream, col);
                         Object val = getFieldValue(item, col.getDetailExpression());
                         stream.append("(").append(escapePdf(val != null ? val.toString() : "")).append(") Tj\n");
-                        cursor.move(stream, 100, 0);
+                        cursor.move(stream, col.getWidth(), 0);
                     }
                     cursor.moveTo(stream, startX, cursor.y - 12);
-                    // Basic Page Break protection (very simple)
                     if (cursor.y < 50) break; 
                 }
             }
-            cursor.move(stream, 0, -10); // Spacing after table
+            cursor.move(stream, 0, -10);
         }
+    }
+
+    private static void addChartPlaceholder(StringBuilder stream, Cursor cursor, Report.Chart chart) {
+        stream.append("/F2 12 Tf\n0.2 0.4 0.6 rg\n"); // Blueish for chart title
+        stream.append("(").append(escapePdf("[Grafico: " + chart.getType() + " - " + chart.getTitle() + "]")).append(") Tj\n");
+        cursor.move(stream, 0, -80); // Reserve space for chart
+        stream.append("0 g\n"); // Reset color
     }
 
     private static String escapePdf(String s) {
         if (s == null) return "";
-        return s.replace("(", "\\(").replace(")", "\\)").replace("\\", "\\\\");
+        // Basic escaping for PDF strings and ensuring ISO-8859-1 compatibility
+        return s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)");
     }
 
     private static Object getFieldValue(Object obj, String expression) {

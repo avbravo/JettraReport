@@ -149,45 +149,69 @@ report.getViewerOptions()
       .setAllowCsv(true);
 ```
 
-## Native Export Engine (v2.0)
+## Styling and Customization (v2.1)
 
-`JettraReport` now features a completely native export engine. This means you can generate high-quality reports without adding bulky external dependencies like iText or Apache POI to your projects.
+`JettraReport` now supports advanced styling for all report elements and table columns. You can customize font family, size, weight, and color.
 
-### Key Enhancements
-
-- **Smart Layout (Anti-Overlap)**: The PDF engine uses a cursor-based positioning system that prevents elements from overwriting each other.
-- **Accent Support (Tildes)**: Full support for Spanish characters like `á, é, í, ó, ú, ñ`.
-- **Automatic Metadata**: Reports automatically include the generation date/time and page numbering in PDF format.
-- **Enhanced Viewer**: The built-in report viewer allows multiple exports without closing the modal, and features a native browser printing option.
-
-### Usage Example: Exporting to Multiple Formats
+### Element Styling
+Every `ReportElement` (Text, Date, Numeric) can be customized:
 
 ```java
-Report report = new Report("Mi Reporte");
-// ... config ...
-report.exportToPdf("reporte.pdf");
-report.exportToExcel("reporte.xlsx");
-report.exportToWord("reporte.docx");
-report.exportToCsv("reporte.csv");
+Report.TextElement title = new Report.TextElement("REPORTE MENSUAL");
+title.setFontName("Arial");
+title.setFontSize(14);
+title.setBold(true);
+title.setFontColor("#FF0000"); // Red
+report.getHeader().addElement(title);
 ```
 
-## Advanced Tips
-
-### Supporting Special Characters
-The native PDF engine uses ISO-8859-1 encoding by default, which supports most Western European accents. Ensure your input strings are properly encoded.
-
-### Managing Column Widths
-When defining a table, you can control the width of each column to ensure data fits correctly:
+### Table Column Styling
+You can style individual columns in a table:
 
 ```java
 Report.Table table = new Report.Table();
-table.addColumn(new Report.Column("Descripción", "descripcion", 250)); // Wider column
-table.addColumn(new Report.Column("Monto", "monto", 80));
+table.addColumn(new Report.Column("ID", "id", 50)
+    .setFontColor("#007BFF") // Blue
+    .setBold(true)
+    .setFontSize(10));
+table.addColumn(new Report.Column("Nombre", "nombre", 200));
 ```
 
+### Page Orientation
+Support for landscape orientation is now available:
+
+```java
+report.getPageSettings()
+      .setOrientation(Report.PageSettings.Orientation.LANDSCAPE);
+```
+
+### Integrated Charts
+You can add charts to the `Summary` section using a model compatible with `JettraWUI`:
+
+```java
+Report.Chart chart = new Report.Chart(Report.Chart.Type.BAR);
+chart.setTitle("Ventas por Región")
+     .setLabels("Norte", "Sur", "Este", "Oeste")
+     .addDataset("2024", new Number[]{100, 150, 80, 120});
+report.getSummary().addChart(chart);
+```
+
+## Native Export Engine (v2.1)
+
+`JettraReport` features a completely native export engine with the following improvements:
+
+### Key Enhancements
+
+- **Dynamic Styling**: Support for RGB colors and bold fonts in PDF.
+- **Orientation Support**: Automatic layout adjustment for Landscape mode.
+- **Smart Layout (Anti-Overlap)**: Elements respect column widths and margins.
+- **Character Support**: Full support for Spanish characters like `á, é, í, ó, ú, ñ` using WinAnsi encoding.
+- **Chart Placeholders**: Basic support for visualizing chart data in PDF reports.
+
 ## Summary of Recent Updates
-- [x] Replaced external dependencies with native Java implementation.
-- [x] Fixed overlapping elements in PDF layout.
-- [x] Added current date/time and page numbers to PDF reports.
-- [x] Enabled support for accented characters.
-- [x] Improved report viewer modal behavior.
+- [x] Added support for custom colors, font sizes, and bold styling.
+- [x] Implemented Landscape page orientation.
+- [x] Enhanced character support for `ñ` and accents in PDF.
+- [x] Added support for Charts in the summary section.
+- [x] Fixed column overlapping by respecting width settings.
+- [x] Improved report viewer modal with advanced options.
