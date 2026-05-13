@@ -149,20 +149,45 @@ report.getViewerOptions()
       .setAllowCsv(true);
 ```
 
-## Visual Designer
+## Native Export Engine (v2.0)
 
-The library includes `ReportDesignerPage`, which can be registered in your Jettra application to allow users to design reports visually.
+`JettraReport` now features a completely native export engine. This means you can generate high-quality reports without adding bulky external dependencies like iText or Apache POI to your projects.
+
+### Key Enhancements
+
+- **Smart Layout (Anti-Overlap)**: The PDF engine uses a cursor-based positioning system that prevents elements from overwriting each other.
+- **Accent Support (Tildes)**: Full support for Spanish characters like `á, é, í, ó, ú, ñ`.
+- **Automatic Metadata**: Reports automatically include the generation date/time and page numbering in PDF format.
+- **Enhanced Viewer**: The built-in report viewer allows multiple exports without closing the modal, and features a native browser printing option.
+
+### Usage Example: Exporting to Multiple Formats
 
 ```java
-jettraServer.addHandler("/report-designer", ReportDesignerPage.class);
+Report report = new Report("Mi Reporte");
+// ... config ...
+report.exportToPdf("reporte.pdf");
+report.exportToExcel("reporte.xlsx");
+report.exportToWord("reporte.docx");
+report.exportToCsv("reporte.csv");
 ```
 
-## Exporting Data
+## Advanced Tips
 
-You can export the same report object to multiple formats:
+### Supporting Special Characters
+The native PDF engine uses ISO-8859-1 encoding by default, which supports most Western European accents. Ensure your input strings are properly encoded.
+
+### Managing Column Widths
+When defining a table, you can control the width of each column to ensure data fits correctly:
 
 ```java
-report.exportToExcel("output.xlsx");
-report.exportToCsv("output.csv");
-report.exportToWord("output.docx");
+Report.Table table = new Report.Table();
+table.addColumn(new Report.Column("Descripción", "descripcion", 250)); // Wider column
+table.addColumn(new Report.Column("Monto", "monto", 80));
 ```
+
+## Summary of Recent Updates
+- [x] Replaced external dependencies with native Java implementation.
+- [x] Fixed overlapping elements in PDF layout.
+- [x] Added current date/time and page numbers to PDF reports.
+- [x] Enabled support for accented characters.
+- [x] Improved report viewer modal behavior.
