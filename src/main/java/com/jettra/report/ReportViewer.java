@@ -14,10 +14,13 @@ public class ReportViewer extends Modal {
         this.report = report;
         this.uniqueId = uniqueId;
         
-        setMaxWidth("800px");
-        setPadding("20px");
+        setMaxWidth("900px");
+        setPadding("0");
+        setBackgroundColor("#161b22");
         setZIndex("9999");
         setStyle("display", "none");
+        setStyle("border", "1px solid #30363d");
+        setStyle("box-shadow", "0 0 50px rgba(0,0,0,0.5)");
         
         buildUI();
     }
@@ -26,41 +29,55 @@ public class ReportViewer extends Modal {
         // Toolbar
         Div toolbar = new Div()
             .setStyle("display", "flex")
-            .setStyle("gap", "10px")
+            .setStyle("flex-wrap", "wrap")
+            .setStyle("gap", "8px")
             .setStyle("margin-bottom", "15px")
-            .setStyle("border-bottom", "1px solid #ccc")
-            .setStyle("padding-bottom", "10px");
+            .setStyle("padding", "15px")
+            .setStyle("background-color", "#0d1117")
+            .setStyle("border-bottom", "1px solid #30363d")
+            .setStyle("border-radius", "8px 8px 0 0");
         
         Report.ViewerOptions options = report.getViewerOptions();
         
         if (options.isAllowPdf()) {
-            toolbar.add(new Button("📄 PDF")
+            toolbar.add(new Button("📄\nPDF")
                 .setBackgroundColor("#da3633")
+                .setStyle("height", "60px").setStyle("width", "70px")
+                .setStyle("display", "flex").setStyle("flex-direction", "column").setStyle("align-items", "center").setStyle("justify-content", "center")
                 .setOnclick("location.href='?action=report&format=pdf';"));
         }
         if (options.isAllowExcel()) {
-            toolbar.add(new Button("📊 Excel")
+            toolbar.add(new Button("📊\nExcel")
                 .setBackgroundColor("#238636")
+                .setStyle("height", "60px").setStyle("width", "70px")
+                .setStyle("display", "flex").setStyle("flex-direction", "column").setStyle("align-items", "center").setStyle("justify-content", "center")
                 .setOnclick("location.href='?action=report&format=excel';"));
         }
         if (options.isAllowCsv()) {
-            toolbar.add(new Button("📝 CSV")
+            toolbar.add(new Button("📝\nCSV")
                 .setBackgroundColor("#8957e5")
+                .setStyle("height", "60px").setStyle("width", "70px")
+                .setStyle("display", "flex").setStyle("flex-direction", "column").setStyle("align-items", "center").setStyle("justify-content", "center")
                 .setOnclick("location.href='?action=report&format=csv';"));
         }
         if (options.isAllowWord()) {
-            toolbar.add(new Button("📘 Word")
-                .setBackgroundColor("#0078d4")
+            toolbar.add(new Button("📘\nWord")
+                .setBackgroundColor("#0969da")
+                .setStyle("height", "60px").setStyle("width", "70px")
+                .setStyle("display", "flex").setStyle("flex-direction", "column").setStyle("align-items", "center").setStyle("justify-content", "center")
                 .setOnclick("location.href='?action=report&format=word';"));
         }
         if (options.isAllowPrint()) {
-            toolbar.add(new Button("🖨️ Imprimir")
+            toolbar.add(new Button("🖨️\nImprimir")
                 .setBackgroundColor("#007bff")
-                .setOnclick("var content = document.getElementById('previewPanel_" + uniqueId + "').innerHTML; var win = window.open('', '', 'height=700,width=700'); win.document.write('<html><head><title>Reporte</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:10px;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background-color:#f2f2f2;}</style></head><body>'); win.document.write(content); win.document.write('</body></html>'); win.document.close(); win.print();"));
+                .setStyle("height", "60px").setStyle("width", "100px")
+                .setStyle("display", "flex").setStyle("flex-direction", "column").setStyle("align-items", "center").setStyle("justify-content", "center")
+                .setOnclick("var content = document.getElementById('previewPanel_" + uniqueId + "').innerHTML; var win = window.open('', '', 'height=700,width=800'); win.document.write('<html><head><title>Reporte</title><style>body{font-family:sans-serif;padding:40px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #eee;padding:12px;text-align:left;} th{color:#da3633;text-transform:uppercase;font-weight:bold;border-bottom:2px solid #da3633;}</style></head><body>'); win.document.write(content); win.document.write('</body></html>'); win.document.close(); win.print();"));
         }
         
         SelectOne sizeSelect = new SelectOne("sizeSelect")
             .setId("sizeSelect_" + uniqueId)
+            .setStyle("height", "60px").setStyle("padding", "0 15px").setStyle("background-color", "#21262d").setStyle("color", "white").setStyle("border", "1px solid #30363d").setStyle("border-radius", "6px")
             .addOption("100%", "Maximizar (100%)")
             .addOption("800px", "Original (800px)")
             .addOption("75%", "75%")
@@ -72,17 +89,20 @@ public class ReportViewer extends Modal {
         
         Button closeBtn = new Button("Cerrar")
             .setBackgroundColor("#30363d")
+            .setStyle("height", "60px").setStyle("padding", "0 20px")
             .setOnclick("document.getElementById('reportModal_" + uniqueId + "').style.display='none';");
         toolbar.add(closeBtn);
         
         // Report Preview Panel
         Div previewPanel = new Div()
             .setId("previewPanel_" + uniqueId)
-            .setStyle("max-height", "60vh")
+            .setStyle("max-height", "70vh")
             .setStyle("overflow-y", "auto")
             .setStyle("background-color", "white")
             .setStyle("color", "black")
-            .setStyle("padding", "20px")
+            .setStyle("padding", "40px")
+            .setStyle("margin", "0 20px 20px 20px")
+            .setStyle("border-radius", "4px")
             .setStyle("border", "1px solid #ddd");
         
         // Render Header
@@ -149,9 +169,14 @@ public class ReportViewer extends Modal {
             dtable.setStyle("width", "100%");
             Row headerRow = new Row();
             for (Report.Column col : table.getColumns()) {
-                TD td = new TD(col.getHeader()).setStyle("font-weight", "bold")
-                        .setStyle("background-color", "#f8f9fa")
-                        .setStyle("border-bottom", "2px solid #dee2e6");
+                // Image mockup shows red uppercase headers
+                TD td = new TD(col.getHeader().toUpperCase())
+                        .setStyle("font-weight", "bold")
+                        .setStyle("color", "#da3633")
+                        .setStyle("font-size", "1.2rem")
+                        .setStyle("padding", "15px")
+                        .setStyle("border-bottom", "1px solid #eee")
+                        .setStyle("text-align", "left");
                 if (col.getWidth() > 0) td.setStyle("width", col.getWidth() + "px");
                 headerRow.add(td);
             }
