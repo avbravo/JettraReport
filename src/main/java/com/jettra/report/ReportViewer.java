@@ -36,27 +36,27 @@ public class ReportViewer extends Modal {
         if (options.isAllowPdf()) {
             toolbar.add(new Button("📄 PDF")
                 .setBackgroundColor("#da3633")
-                .setOnclick("location.href='?action=report&format=pdf'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
+                .setOnclick("location.href='?action=report&format=pdf';"));
         }
         if (options.isAllowExcel()) {
             toolbar.add(new Button("📊 Excel")
                 .setBackgroundColor("#238636")
-                .setOnclick("location.href='?action=report&format=excel'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
+                .setOnclick("location.href='?action=report&format=excel';"));
         }
         if (options.isAllowCsv()) {
             toolbar.add(new Button("📝 CSV")
                 .setBackgroundColor("#8957e5")
-                .setOnclick("location.href='?action=report&format=csv'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
+                .setOnclick("location.href='?action=report&format=csv';"));
         }
         if (options.isAllowWord()) {
             toolbar.add(new Button("📘 Word")
                 .setBackgroundColor("#0078d4")
-                .setOnclick("location.href='?action=report&format=word'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
+                .setOnclick("location.href='?action=report&format=word';"));
         }
         if (options.isAllowPrint()) {
             toolbar.add(new Button("🖨️ Imprimir")
                 .setBackgroundColor("#007bff")
-                .setOnclick("location.href='?action=report&format=pdf&print=true'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
+                .setOnclick("var content = document.getElementById('previewPanel_" + uniqueId + "').innerHTML; var win = window.open('', '', 'height=700,width=700'); win.document.write('<html><head><title>Reporte</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:10px;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background-color:#f2f2f2;}</style></head><body>'); win.document.write(content); win.document.write('</body></html>'); win.document.close(); win.print();"));
         }
         
         SelectOne sizeSelect = new SelectOne("sizeSelect")
@@ -77,6 +77,7 @@ public class ReportViewer extends Modal {
         
         // Report Preview Panel
         Div previewPanel = new Div()
+            .setId("previewPanel_" + uniqueId)
             .setStyle("max-height", "60vh")
             .setStyle("overflow-y", "auto")
             .setStyle("background-color", "white")
