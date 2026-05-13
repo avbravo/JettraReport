@@ -1,8 +1,6 @@
 package com.jettra.report;
 
-import com.lowagie.text.*;
-import com.lowagie.text.pdf.*;
-import java.io.FileOutputStream;
+import com.jettra.report.exporter.*;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,18 +49,21 @@ public class Report {
         private boolean allowPdf = true;
         private boolean allowExcel = true;
         private boolean allowCsv = true;
+        private boolean allowWord = true;
 
         public ViewerOptions setShowViewer(boolean showViewer) { this.showViewer = showViewer; return this; }
         public ViewerOptions setAllowPrint(boolean allowPrint) { this.allowPrint = allowPrint; return this; }
         public ViewerOptions setAllowPdf(boolean allowPdf) { this.allowPdf = allowPdf; return this; }
         public ViewerOptions setAllowExcel(boolean allowExcel) { this.allowExcel = allowExcel; return this; }
         public ViewerOptions setAllowCsv(boolean allowCsv) { this.allowCsv = allowCsv; return this; }
+        public ViewerOptions setAllowWord(boolean allowWord) { this.allowWord = allowWord; return this; }
 
         public boolean isShowViewer() { return showViewer; }
         public boolean isAllowPrint() { return allowPrint; }
         public boolean isAllowPdf() { return allowPdf; }
         public boolean isAllowExcel() { return allowExcel; }
         public boolean isAllowCsv() { return allowCsv; }
+        public boolean isAllowWord() { return allowWord; }
     }
 
     public static class PageSettings {
@@ -145,6 +146,7 @@ public class Report {
         public TextElement(String expression) { this.expression = expression; }
         public String getExpression() { return expression; }
         public void setBold(boolean bold) { this.bold = bold; }
+        public boolean isBold() { return bold; }
     }
 
     public static class DateElement implements ReportElement {
@@ -218,181 +220,19 @@ public class Report {
     // Export methods
 
     public void exportToPdf(String path) {
-        Document document = new Document(
-            pageSettings.pageSize == PageSettings.PageSize.LETTER ? PageSize.LETTER : PageSize.A4,
-            pageSettings.marginLeft, pageSettings.marginRight, pageSettings.marginTop, pageSettings.marginBottom
-        );
-        if (pageSettings.orientation == PageSettings.Orientation.LANDSCAPE) {
-            document.setPageSize(document.getPageSize().rotate());
-        }
-
-        try {
-            PdfWriter.getInstance(document, new FileOutputStream(path));
-            document.open();
-
-            // Header Section
-            for (ReportElement el : header.getElements()) {
-                addPdfElement(document, el, null);
-            }
-
-            // Detail Section
-            // Logic: If there is a Table, we render it once (as it contains its own data loop)
-            // If there are other elements, we render them per row.
-            boolean tableRendered = false;
-            for (ReportElement el : detail.getElements()) {
-                if (el instanceof Table) {
-                    addPdfElement(document, el, null);
-                    tableRendered = true;
-                }
-            }
-            
-            if (!tableRendered) {
-                for (Object row : data) {
-                    for (ReportElement el : detail.getElements()) {
-                        addPdfElement(document, el, row);
-                    }
-                }
-            }
-
-            // Summary Section
-            for (ReportElement el : summary.getElements()) {
-                addPdfElement(document, el, null);
-            }
-
-            // Footer Section
-            for (ReportElement el : footer.getElements()) {
-                addPdfElement(document, el, null);
-            }
-
-            document.close();
-        } catch (Exception e) {
-            System.err.println("Error generating PDF: " + e.getMessage());
-            e.printStackTrace();
-        }
+        JettraPdfExporter.export(this, path);
     }
 
-    private void addPdfElement(Document doc, ReportElement el, Object row) throws Exception {
-        if (el instanceof TextElement tel) {
-            Font font = new Font(Font.HELVETICA, 12, tel.bold ? Font.BOLD : Font.NORMAL);
-            doc.add(new Paragraph(tel.getExpression(), font));
-        } else if (el instanceof Table table) {
-            PdfPTable pdfTable = new PdfPTable(table.getColumns().size());
-            pdfTable.setWidthPercentage(100);
-            
-            // Headers
-            for (Column col : table.getColumns()) {
-                pdfTable.addCell(new Phrase(col.getHeader(), new Font(Font.HELVETICA, 10, Font.BOLD)));
-            }
-            
-            // If we are in the detail section and el is a table, 
-            // the user probably wants to render the WHOLE data list in this table.
-            // But usually detail section renders ONE row at a time.
-            // In JettraReport, Table element in Detail section means "Render all data here".
-            if (data != null && !data.isEmpty()) {
-                for (Object item : data) {
-                    for (Column col : table.getColumns()) {
-                        Object val = getFieldValue(item, col.getDetailExpression());
-                        pdfTable.addCell(new Phrase(val != null ? val.toString() : "", new Font(Font.HELVETICA, 10)));
-                    }
-                }
-            }
-            doc.add(pdfTable);
-        }
+    public void exportToWord(String path) {
+        JettraWordExporter.export(this, path);
     }
-
-    private Object getFieldValue(Object obj, String expression) {
-        try {
-            Field field = obj.getClass().getDeclaredField(expression);
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (Exception e) {
-            return expression; // Return as literal if field not found
-        }
-    }
-
-    public void exportToWord(String path) { /* Implementation with POI */ }
 
     public void exportToExcel(String path) {
-        try (org.apache.poi.xssf.streaming.SXSSFWorkbook workbook = new org.apache.poi.xssf.streaming.SXSSFWorkbook();
-             java.io.FileOutputStream out = new java.io.FileOutputStream(path)) {
-            
-            org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Report");
-            Table table = null;
-            for (ReportElement el : detail.getElements()) {
-                if (el instanceof Table) {
-                    table = (Table) el;
-                    break;
-                }
-            }
-
-            if (table != null) {
-                int rowNum = 0;
-                // Header
-                org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(rowNum++);
-                org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
-                org.apache.poi.ss.usermodel.Font font = workbook.createFont();
-                font.setBold(true);
-                headerStyle.setFont(font);
-
-                for (int i = 0; i < table.getColumns().size(); i++) {
-                    org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
-                    cell.setCellValue(table.getColumns().get(i).getHeader());
-                    cell.setCellStyle(headerStyle);
-                }
-
-                // Data
-                if (data != null) {
-                    for (Object item : data) {
-                        org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
-                        for (int i = 0; i < table.getColumns().size(); i++) {
-                            Object val = getFieldValue(item, table.getColumns().get(i).getDetailExpression());
-                            row.createCell(i).setCellValue(val != null ? val.toString() : "");
-                        }
-                    }
-                }
-            }
-            workbook.write(out);
-            workbook.dispose();
-        } catch (Exception e) {
-            System.err.println("Error generating Excel: " + e.getMessage());
-        }
+        JettraExcelExporter.export(this, path);
     }
 
     public void exportToCsv(String path) {
-        try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileOutputStream(path))) {
-            Table table = null;
-            for (ReportElement el : detail.getElements()) {
-                if (el instanceof Table) {
-                    table = (Table) el;
-                    break;
-                }
-            }
-
-            if (table != null) {
-                // Headers
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < table.getColumns().size(); i++) {
-                    sb.append("\"").append(table.getColumns().get(i).getHeader().replace("\"", "\"\"")).append("\"");
-                    if (i < table.getColumns().size() - 1) sb.append(",");
-                }
-                writer.println(sb.toString());
-
-                // Data
-                if (data != null) {
-                    for (Object item : data) {
-                        sb = new StringBuilder();
-                        for (int i = 0; i < table.getColumns().size(); i++) {
-                            Object val = getFieldValue(item, table.getColumns().get(i).getDetailExpression());
-                            sb.append("\"").append(val != null ? val.toString().replace("\"", "\"\"") : "").append("\"");
-                            if (i < table.getColumns().size() - 1) sb.append(",");
-                        }
-                        writer.println(sb.toString());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error generating CSV: " + e.getMessage());
-        }
+        JettraCsvExporter.export(this, path);
     }
 
     public void exportToTxt(String path) { /* Implementation */ }

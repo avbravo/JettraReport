@@ -6,7 +6,7 @@
 
 - **Multi-section support**: Header, Footer, Detail, Summary, and Groups.
 - **Advanced Components**: Charts (Bar, Pie, Line), Subreports, and automatic Subtotals.
-- **Rich Export Formats**: PDF, Word (Docx), Excel (Xlsx), CSV, and TXT.
+- **Native Export Formats**: PDF, Word (Docx), Excel (Xlsx), CSV, and TXT (Built-in, NO external dependencies like iText or POI).
 - **Visual Designer**: Integrated `ReportDesignerPage` for web-based visual design.
 - **Java 25 Ready**: Optimized for modern Java features.
 
@@ -144,7 +144,8 @@ report.getViewerOptions()
       .setShowViewer(true)
       .setAllowPrint(true)
       .setAllowPdf(true)
-      .setAllowExcel(false)
+      .setAllowExcel(true)
+      .setAllowWord(true)
       .setAllowCsv(true);
 ```
 

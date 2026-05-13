@@ -48,6 +48,11 @@ public class ReportViewer extends Modal {
                 .setBackgroundColor("#8957e5")
                 .setOnclick("location.href='?action=report&format=csv'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
         }
+        if (options.isAllowWord()) {
+            toolbar.add(new Button("📘 Word")
+                .setBackgroundColor("#0078d4")
+                .setOnclick("location.href='?action=report&format=word'; document.getElementById('reportModal_" + uniqueId + "').style.display='none';"));
+        }
         if (options.isAllowPrint()) {
             toolbar.add(new Button("🖨️ Imprimir")
                 .setBackgroundColor("#007bff")
