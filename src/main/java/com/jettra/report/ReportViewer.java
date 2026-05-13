@@ -121,37 +121,77 @@ public class ReportViewer extends Modal {
     }
     
     private io.jettra.wui.core.UIComponent renderElement(Report.ReportElement el, Object row) {
-        if (el instanceof Report.TextElement) {
-            Report.TextElement tel = (Report.TextElement) el;
-            Paragraph p = new Paragraph(tel.getExpression());
-            try {
-                Field boldField = Report.TextElement.class.getDeclaredField("bold");
-                boldField.setAccessible(true);
-                if ((Boolean) boldField.get(tel)) p.setStyle("font-weight", "bold");
-            } catch (Exception e) {}
-            return p;
-        } else if (el instanceof Report.Table) {
-            Report.Table rtable = (Report.Table) el;
-            Datatable table = new Datatable();
-            Row headerRow = new Row();
-            for (Report.Column col : rtable.getColumns()) {
-                headerRow.add(new TD(col.getHeader()).setStyle("font-weight", "bold").setStyle("border-bottom", "2px solid #ccc"));
+        if (el instanceof Report.TextElement tel) {
+            String text = tel.getExpression();
+            if (row != null) {
+                text = resolveExpression(text, row);
             }
-            table.addHeaderRow(headerRow);
+            Paragraph p = new Paragraph(text);
+            if (tel.isBold()) p.setStyle("font-weight", "bold");
+            if (tel.getFontSize() > 0) p.setStyle("font-size", tel.getFontSize() + "px");
+            if (tel.getFontColor() != null) p.setStyle("color", tel.getFontColor());
+            return p;
+        } else if (el instanceof Report.DateElement del) {
+            String text = resolveExpression(del.getExpression(), row);
+            Paragraph p = new Paragraph(text);
+            if (del.isBold()) p.setStyle("font-weight", "bold");
+            if (del.getFontColor() != null) p.setStyle("color", del.getFontColor());
+            return p;
+        } else if (el instanceof Report.NumericElement nel) {
+            String text = resolveExpression(nel.getExpression(), row);
+            Paragraph p = new Paragraph(text);
+            p.setStyle("text-align", "right");
+            if (nel.isBold()) p.setStyle("font-weight", "bold");
+            if (nel.getFontColor() != null) p.setStyle("color", nel.getFontColor());
+            return p;
+        } else if (el instanceof Report.Table table) {
+            Datatable dtable = new Datatable();
+            dtable.setStyle("width", "100%");
+            Row headerRow = new Row();
+            for (Report.Column col : table.getColumns()) {
+                TD td = new TD(col.getHeader()).setStyle("font-weight", "bold")
+                        .setStyle("background-color", "#f8f9fa")
+                        .setStyle("border-bottom", "2px solid #dee2e6");
+                if (col.getWidth() > 0) td.setStyle("width", col.getWidth() + "px");
+                headerRow.add(td);
+            }
+            dtable.addHeaderRow(headerRow);
             
             if (report.getData() != null) {
                 for (Object item : report.getData()) {
                     Row dataRow = new Row();
-                    for (Report.Column col : rtable.getColumns()) {
+                    for (Report.Column col : table.getColumns()) {
                         Object val = getFieldValue(item, col.getDetailExpression());
-                        dataRow.add(new TD(val != null ? val.toString() : "").setStyle("border-bottom", "1px solid #eee"));
+                        TD td = new TD(val != null ? val.toString() : "").setStyle("border-bottom", "1px solid #eee");
+                        if (col.isBold()) td.setStyle("font-weight", "bold");
+                        if (col.getFontColor() != null) td.setStyle("color", col.getFontColor());
+                        if (col.getFontSize() > 0) td.setStyle("font-size", col.getFontSize() + "px");
+                        dataRow.add(td);
                     }
-                    table.addRow(dataRow);
+                    dtable.addRow(dataRow);
                 }
             }
-            return table;
+            return dtable;
+        } else if (el instanceof Report.ImageElement img) {
+            return new Image(img.getPath(), "Image");
         }
         return new Div();
+    }
+
+    private String resolveExpression(String expression, Object row) {
+        if (expression == null) return "";
+        if (row == null) return expression;
+        
+        // Basic resolution for $F{field}
+        if (expression.contains("$F{")) {
+            String fieldName = expression.substring(expression.indexOf("$F{") + 3, expression.indexOf("}"));
+            Object val = getFieldValue(row, fieldName);
+            return expression.replace("$F{" + fieldName + "}", val != null ? val.toString() : "");
+        }
+        
+        // If it's just a field name and we are in detail
+        Object val = getFieldValue(row, expression);
+        return val != null ? val.toString() : expression;
     }
     
     private Object getFieldValue(Object obj, String expression) {
