@@ -226,12 +226,6 @@ public class JettraPdfExporter {
     }
 
     private static Object getFieldValue(Object obj, String expression) {
-        try {
-            Field field = obj.getClass().getDeclaredField(expression);
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (Exception e) {
-            return expression;
-        }
+        return com.jettra.report.ReportUtils.getFieldValue(obj, expression);
     }
 }
