@@ -13,9 +13,10 @@ public class ReportUtils {
             field.setAccessible(true);
             Object val = field.get(obj);
             
-            // Check for @TableColumnField via reflection to avoid direct dependency
+            // Check for @TableColumnField, @ViewSelectOne or @ViewSelectMany via reflection to avoid direct dependency
             for (java.lang.annotation.Annotation anno : field.getAnnotations()) {
-                if (anno.annotationType().getSimpleName().equals("TableColumnField")) {
+                String name = anno.annotationType().getSimpleName();
+                if (name.equals("TableColumnField")) {
                     try {
                         Method m = anno.annotationType().getMethod("field");
                         String targetField = (String) m.invoke(anno);
@@ -33,6 +34,40 @@ public class ReportUtils {
                             }
                         }
                     } catch (Exception e) {}
+                } else if (name.equals("ViewSelectOne") || name.equals("ViewSelectMany")) {
+                    try {
+                        Method mFomt = anno.annotationType().getMethod("fieldOnlyMasterTable");
+                        String fomt = (String) mFomt.invoke(anno);
+                        if (fomt != null && !fomt.trim().isEmpty()) {
+                            if (val instanceof List) {
+                                List<?> list = (List<?>) val;
+                                StringBuilder sb = new StringBuilder();
+                                for (int i = 0; i < list.size(); i++) {
+                                    sb.append(getNestedFieldsJoined(list.get(i), fomt));
+                                    if (i < list.size() - 1) sb.append(", ");
+                                }
+                                return sb.toString();
+                            } else {
+                                return getNestedFieldsJoined(val, fomt);
+                            }
+                        } else {
+                            Method mLabel = anno.annotationType().getMethod("label");
+                            String labelFields = (String) mLabel.invoke(anno);
+                            if (labelFields != null && !labelFields.trim().isEmpty()) {
+                                if (val instanceof List) {
+                                    List<?> list = (List<?>) val;
+                                    StringBuilder sb = new StringBuilder();
+                                    for (int i = 0; i < list.size(); i++) {
+                                        sb.append(getNestedFieldsJoined(list.get(i), labelFields));
+                                        if (i < list.size() - 1) sb.append(", ");
+                                    }
+                                    return sb.toString();
+                                } else {
+                                    return getNestedFieldsJoined(val, labelFields);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {}
                 }
             }
             return val;
@@ -46,6 +81,19 @@ public class ReportUtils {
                 return expression;
             }
         }
+    }
+
+    private static Object getNestedFieldsJoined(Object obj, String fieldNames) {
+        if (obj == null) return "";
+        String[] fields = fieldNames.split(",");
+        java.util.List<String> values = new java.util.ArrayList<>();
+        for (String fieldName : fields) {
+            Object val = getNestedFieldValue(obj, fieldName.trim());
+            if (val != null) {
+                values.add(val.toString());
+            }
+        }
+        return values.isEmpty() ? obj.toString() : String.join(" - ", values);
     }
 
     private static Object getNestedFieldValue(Object obj, String expression) {
