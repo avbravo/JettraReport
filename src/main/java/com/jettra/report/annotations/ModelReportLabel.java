@@ -21,6 +21,15 @@ public @interface ModelReportLabel {
         LEFT, CENTER, RIGHT
     }
 
+    enum Style {
+        BOLD, ITALIC, SUBLINE, STRIKETHROUGH
+    }
+
     Section section() default Section.HEADER;
     Orientation orientation() default Orientation.LEFT;
+
+    String font() default "Helvetica";
+    int size() default 10;
+    String textColor() default "#000000";
+    Style[] style() default {};
 }

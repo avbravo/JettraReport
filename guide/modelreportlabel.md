@@ -30,6 +30,14 @@ La anotación acepta los siguientes parámetros:
     *   `ModelReportLabel.Orientation.LEFT`: Alineación a la izquierda.
     *   `ModelReportLabel.Orientation.CENTER`: Alineación centrada.
     *   `ModelReportLabel.Orientation.RIGHT`: Alineación a la derecha.
+*   **`font`** (`String`, por defecto `"Helvetica"`): Nombre de la fuente a utilizar.
+*   **`size`** (`int`, por defecto `10`): Tamaño de la fuente.
+*   **`textColor`** (`String`, por defecto `"#000000"`): Color del texto en formato Hexadecimal (ej: `"#FF0000"`).
+*   **`style`** (`Style[]`, por defecto vacío): Permite aplicar múltiples estilos al texto usando el enum `ModelReportLabel.Style`. Valores soportados:
+    *   `BOLD`: Negrita.
+    *   `ITALIC`: Cursiva.
+    *   `SUBLINE`: Subrayado.
+    *   `STRIKETHROUGH`: Tachado.
 
 ## Ejemplo Completo
 

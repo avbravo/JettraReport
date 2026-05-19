@@ -74,7 +74,24 @@ public class JettraWordExporter {
                 sb.append("<w:pPr><w:jc w:val=\"").append(al).append("\"/></w:pPr>");
             }
             sb.append("<w:r>");
-            if (tel.isBold()) sb.append("<w:rPr><w:b/></w:rPr>");
+            sb.append("<w:rPr>");
+            if (tel.isBold()) sb.append("<w:b/>");
+            if (tel.isItalic()) sb.append("<w:i/>");
+            if (tel.isUnderline()) sb.append("<w:u w:val=\"single\"/>");
+            if (tel.isStrikethrough()) sb.append("<w:strike/>");
+            
+            // Size (in half-points)
+            int sz = tel.getFontSize() * 2;
+            sb.append("<w:sz w:val=\"").append(sz).append("\"/>");
+            sb.append("<w:szCs w:val=\"").append(sz).append("\"/>");
+            
+            // Color
+            if (tel.getFontColor() != null && tel.getFontColor().startsWith("#")) {
+                String hex = tel.getFontColor().substring(1);
+                sb.append("<w:color w:val=\"").append(hex).append("\"/>");
+            }
+            sb.append("</w:rPr>");
+            
             sb.append("<w:t>").append(escapeXml(tel.getExpression())).append("</w:t></w:r></w:p>");
         } else if (el instanceof Report.Table table) {
             sb.append("<w:tbl>");

@@ -146,12 +146,21 @@ public class Report {
         void setFontColor(String fontColor);
         String getAlignment();
         void setAlignment(String alignment);
+        boolean isItalic();
+        void setItalic(boolean italic);
+        boolean isUnderline();
+        void setUnderline(boolean underline);
+        boolean isStrikethrough();
+        void setStrikethrough(boolean strikethrough);
     }
 
     public static abstract class AbstractReportElement implements ReportElement {
         protected String fontName = "Helvetica";
         protected int fontSize = 10;
         protected boolean bold = false;
+        protected boolean italic = false;
+        protected boolean underline = false;
+        protected boolean strikethrough = false;
         protected String fontColor = "#000000";
         protected String alignment = "LEFT";
 
@@ -165,6 +174,12 @@ public class Report {
         @Override public void setFontColor(String fontColor) { this.fontColor = fontColor; }
         @Override public String getAlignment() { return alignment; }
         @Override public void setAlignment(String alignment) { this.alignment = alignment; }
+        @Override public boolean isItalic() { return italic; }
+        @Override public void setItalic(boolean italic) { this.italic = italic; }
+        @Override public boolean isUnderline() { return underline; }
+        @Override public void setUnderline(boolean underline) { this.underline = underline; }
+        @Override public boolean isStrikethrough() { return strikethrough; }
+        @Override public void setStrikethrough(boolean strikethrough) { this.strikethrough = strikethrough; }
     }
 
     public static class TextElement extends AbstractReportElement {
@@ -215,6 +230,12 @@ public class Report {
         @Override public void setFontColor(String fontColor) {}
         @Override public String getAlignment() { return alignment; }
         @Override public void setAlignment(String alignment) { this.alignment = alignment; }
+        @Override public boolean isItalic() { return false; }
+        @Override public void setItalic(boolean italic) {}
+        @Override public boolean isUnderline() { return false; }
+        @Override public void setUnderline(boolean underline) {}
+        @Override public boolean isStrikethrough() { return false; }
+        @Override public void setStrikethrough(boolean strikethrough) {}
 
         public void addColumn(Column column) { columns.add(column); }
         public List<Column> getColumns() { return columns; }
@@ -230,6 +251,9 @@ public class Report {
         private String fontName = "Helvetica";
         private int fontSize = 10;
         private boolean bold = false;
+        private boolean italic = false;
+        private boolean underline = false;
+        private boolean strikethrough = false;
         private String fontColor = "#000000";
         
         public Column(String header, String detailExpression, int width) {
@@ -249,6 +273,12 @@ public class Report {
         public Column setBold(boolean bold) { this.bold = bold; return this; }
         public String getFontColor() { return fontColor; }
         public Column setFontColor(String fontColor) { this.fontColor = fontColor; return this; }
+        public boolean isItalic() { return italic; }
+        public Column setItalic(boolean italic) { this.italic = italic; return this; }
+        public boolean isUnderline() { return underline; }
+        public Column setUnderline(boolean underline) { this.underline = underline; return this; }
+        public boolean isStrikethrough() { return strikethrough; }
+        public Column setStrikethrough(boolean strikethrough) { this.strikethrough = strikethrough; return this; }
     }
 
     public static class ImageElement extends AbstractReportElement {

@@ -97,7 +97,7 @@ public class JettraPdfExporter {
             PdfObject pages = new PdfObject(nextId++, "<< /Type /Pages /Kids [ " + (nextId) + " 0 R ] /Count 1 >>");
             objects.add(pages);
             
-            PdfObject page = new PdfObject(nextId++, "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 " + (nextId + 1) + " 0 R /F2 " + (nextId + 2) + " 0 R >> >> /Contents " + (nextId) + " 0 R /MediaBox [ 0 0 " + width + " " + height + " ] >>");
+            PdfObject page = new PdfObject(nextId++, "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 " + (nextId + 1) + " 0 R /F2 " + (nextId + 2) + " 0 R /F3 " + (nextId + 3) + " 0 R /F4 " + (nextId + 4) + " 0 R >> >> /Contents " + (nextId) + " 0 R /MediaBox [ 0 0 " + width + " " + height + " ] >>");
             objects.add(page);
             
             PdfObject contents = new PdfObject(nextId++, "<< /Length " + streamContent.length() + " >>\nstream\n" + streamContent + "endstream");
@@ -108,6 +108,12 @@ public class JettraPdfExporter {
 
             PdfObject font2 = new PdfObject(nextId++, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
             objects.add(font2);
+
+            PdfObject font3 = new PdfObject(nextId++, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>");
+            objects.add(font3);
+
+            PdfObject font4 = new PdfObject(nextId++, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>");
+            objects.add(font4);
 
             long currentOffset = 0;
             String pdfHeader = "%PDF-1.4\n";
@@ -143,7 +149,9 @@ public class JettraPdfExporter {
 
     private static void applyStyle(StringBuilder stream, Report.ReportElement el) {
         String font = "F1";
-        if (el.isBold()) font = "F2";
+        if (el.isBold() && el.isItalic()) font = "F4";
+        else if (el.isBold()) font = "F2";
+        else if (el.isItalic()) font = "F3";
         stream.append("/").append(font).append(" ").append(el.getFontSize()).append(" Tf\n");
         
         String hexColor = el.getFontColor();
@@ -162,7 +170,10 @@ public class JettraPdfExporter {
     }
 
     private static void applyColumnStyle(StringBuilder stream, Report.Column col) {
-        String font = col.isBold() ? "F2" : "F1";
+        String font = "F1";
+        if (col.isBold() && col.isItalic()) font = "F4";
+        else if (col.isBold()) font = "F2";
+        else if (col.isItalic()) font = "F3";
         stream.append("/").append(font).append(" ").append(col.getFontSize()).append(" Tf\n");
         String hexColor = col.getFontColor();
         if (hexColor != null && hexColor.startsWith("#")) {
@@ -184,9 +195,9 @@ public class JettraPdfExporter {
             applyStyle(stream, tel);
             String alignment = el.getAlignment();
             float targetX = settings.getMarginLeft();
+            float estimatedWidth = tel.getExpression().length() * (el.getFontSize() * 0.55f);
             if (alignment != null) {
                 float usableWidth = width - settings.getMarginLeft() - settings.getMarginRight();
-                float estimatedWidth = tel.getExpression().length() * (el.getFontSize() * 0.55f);
                 if (alignment.equalsIgnoreCase("CENTER")) {
                     targetX = settings.getMarginLeft() + (usableWidth - estimatedWidth) / 2.0f;
                 } else if (alignment.equalsIgnoreCase("RIGHT")) {
@@ -195,6 +206,14 @@ public class JettraPdfExporter {
             }
             cursor.moveTo(stream, targetX, cursor.y);
             stream.append("(").append(escapePdf(tel.getExpression())).append(") Tj\n");
+            
+            if (el.isUnderline()) {
+                stream.append(String.format("%.2f %.2f m %.2f %.2f l S\n", targetX, cursor.y - 1.5f, targetX + estimatedWidth, cursor.y - 1.5f));
+            }
+            if (el.isStrikethrough()) {
+                stream.append(String.format("%.2f %.2f m %.2f %.2f l S\n", targetX, cursor.y + (el.getFontSize() * 0.3f), targetX + estimatedWidth, cursor.y + (el.getFontSize() * 0.3f)));
+            }
+            
             cursor.moveTo(stream, settings.getMarginLeft(), cursor.y - 15);
         } else if (el instanceof Report.Table table) {
             float startX = cursor.x;
