@@ -144,6 +144,8 @@ public class Report {
         void setFontSize(int fontSize);
         void setBold(boolean bold);
         void setFontColor(String fontColor);
+        String getAlignment();
+        void setAlignment(String alignment);
     }
 
     public static abstract class AbstractReportElement implements ReportElement {
@@ -151,6 +153,7 @@ public class Report {
         protected int fontSize = 10;
         protected boolean bold = false;
         protected String fontColor = "#000000";
+        protected String alignment = "LEFT";
 
         @Override public String getFontName() { return fontName; }
         @Override public int getFontSize() { return fontSize; }
@@ -160,6 +163,8 @@ public class Report {
         @Override public void setFontSize(int fontSize) { this.fontSize = fontSize; }
         @Override public void setBold(boolean bold) { this.bold = bold; }
         @Override public void setFontColor(String fontColor) { this.fontColor = fontColor; }
+        @Override public String getAlignment() { return alignment; }
+        @Override public void setAlignment(String alignment) { this.alignment = alignment; }
     }
 
     public static class TextElement extends AbstractReportElement {
@@ -198,6 +203,7 @@ public class Report {
     public static class Table implements ReportElement {
         private List<Column> columns = new ArrayList<>();
         private String datasourceExpression;
+        private String alignment = "LEFT";
         
         @Override public String getFontName() { return "Helvetica"; }
         @Override public int getFontSize() { return 10; }
@@ -207,9 +213,14 @@ public class Report {
         @Override public void setFontSize(int fontSize) {}
         @Override public void setBold(boolean bold) {}
         @Override public void setFontColor(String fontColor) {}
+        @Override public String getAlignment() { return alignment; }
+        @Override public void setAlignment(String alignment) { this.alignment = alignment; }
 
         public void addColumn(Column column) { columns.add(column); }
         public List<Column> getColumns() { return columns; }
+        
+        public String getDatasourceExpression() { return datasourceExpression; }
+        public void setDatasourceExpression(String datasourceExpression) { this.datasourceExpression = datasourceExpression; }
     }
 
     public static class Column {

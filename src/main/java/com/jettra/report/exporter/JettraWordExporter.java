@@ -68,7 +68,12 @@ public class JettraWordExporter {
 
     private static void addWordElement(StringBuilder sb, Report.ReportElement el, Object row, List<?> data) {
         if (el instanceof Report.TextElement tel) {
-            sb.append("<w:p><w:r>");
+            sb.append("<w:p>");
+            if (tel.getAlignment() != null) {
+                String al = tel.getAlignment().toLowerCase();
+                sb.append("<w:pPr><w:jc w:val=\"").append(al).append("\"/></w:pPr>");
+            }
+            sb.append("<w:r>");
             if (tel.isBold()) sb.append("<w:rPr><w:b/></w:rPr>");
             sb.append("<w:t>").append(escapeXml(tel.getExpression())).append("</w:t></w:r></w:p>");
         } else if (el instanceof Report.Table table) {

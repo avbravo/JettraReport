@@ -65,12 +65,12 @@ public class JettraPdfExporter {
 
             // Header Elements
             for (Report.ReportElement el : report.getHeader().getElements()) {
-                addPdfElement(stream, cursor, el, null, report.getData());
+                addPdfElement(stream, cursor, el, null, report.getData(), settings, width);
             }
 
             // Detail Elements
             for (Report.ReportElement el : report.getDetail().getElements()) {
-                addPdfElement(stream, cursor, el, null, report.getData());
+                addPdfElement(stream, cursor, el, null, report.getData(), settings, width);
             }
 
             // Summary Section (Charts)
@@ -78,12 +78,12 @@ public class JettraPdfExporter {
                 addChartPlaceholder(stream, cursor, chart);
             }
             for (Report.ReportElement el : report.getSummary().getElements()) {
-                addPdfElement(stream, cursor, el, null, report.getData());
+                addPdfElement(stream, cursor, el, null, report.getData(), settings, width);
             }
 
             // Footer Section
             for (Report.ReportElement el : report.getFooter().getElements()) {
-                addPdfElement(stream, cursor, el, null, report.getData());
+                addPdfElement(stream, cursor, el, null, report.getData(), settings, width);
             }
 
             stream.append("ET\n");
@@ -179,11 +179,23 @@ public class JettraPdfExporter {
         }
     }
 
-    private static void addPdfElement(StringBuilder stream, Cursor cursor, Report.ReportElement el, Object row, List<?> data) {
+    private static void addPdfElement(StringBuilder stream, Cursor cursor, Report.ReportElement el, Object row, List<?> data, Report.PageSettings settings, int width) {
         if (el instanceof Report.TextElement tel) {
             applyStyle(stream, tel);
+            String alignment = el.getAlignment();
+            float targetX = settings.getMarginLeft();
+            if (alignment != null) {
+                float usableWidth = width - settings.getMarginLeft() - settings.getMarginRight();
+                float estimatedWidth = tel.getExpression().length() * (el.getFontSize() * 0.55f);
+                if (alignment.equalsIgnoreCase("CENTER")) {
+                    targetX = settings.getMarginLeft() + (usableWidth - estimatedWidth) / 2.0f;
+                } else if (alignment.equalsIgnoreCase("RIGHT")) {
+                    targetX = width - settings.getMarginRight() - estimatedWidth;
+                }
+            }
+            cursor.moveTo(stream, targetX, cursor.y);
             stream.append("(").append(escapePdf(tel.getExpression())).append(") Tj\n");
-            cursor.move(stream, 0, -15);
+            cursor.moveTo(stream, settings.getMarginLeft(), cursor.y - 15);
         } else if (el instanceof Report.Table table) {
             float startX = cursor.x;
             // Table Header
