@@ -196,6 +196,35 @@ chart.setTitle("Ventas por Región")
 report.getSummary().addChart(chart);
 ```
 
+## Declarative Reporting (Annotations)
+
+When integrating `JettraReport` with the `JettraWUI` framework, you can define report headers and formatting directly in your model classes using annotations.
+
+### `@ModelReportHeader` and `ReportType`
+
+The `@ModelReportHeader` annotation allows you to define declarative headers. For complex Master-Detail views (e.g., using `@ViewDataTable`), you can target specific report views using the `ReportType` property:
+
+- **`ModelReportHeader.ReportType.MASTER`**: Use this for the general datatable list report. The header will be included in the overview grid and exported to PDF, EXCEL, CSV, and WORD formats.
+- **`ModelReportHeader.ReportType.DETAILS`**: Use this for the comprehensive report of a single master record along with its detailed rows (the inner elements of the `@ViewDataTable`). This header will appear in the specific single-record report and will be correctly applied to all export formats (PDF, EXCEL, CSV, WORD).
+
+```java
+import com.jettra.report.annotations.ModelReportHeader;
+
+@ModelReportHeader(
+    value = "LISTADO GENERAL DE FACTURAS", 
+    type = ModelReportHeader.ReportType.MASTER, 
+    style = {ModelReportHeader.Style.BOLD}
+)
+@ModelReportHeader(
+    value = "DETALLE COMPLETO DE FACTURA", 
+    type = ModelReportHeader.ReportType.DETAILS, 
+    textColor = "#da3633"
+)
+public class FacturaModel {
+    // ...
+}
+```
+
 ## Native Export Engine (v2.1)
 
 `JettraReport` features a completely native export engine with the following improvements:

@@ -69,8 +69,20 @@ public class JettraPdfExporter {
             }
 
             // Detail Elements
+            boolean tableRendered = false;
             for (Report.ReportElement el : report.getDetail().getElements()) {
-                addPdfElement(stream, cursor, el, null, report.getData(), settings, width);
+                if (el instanceof Report.Table) {
+                    addPdfElement(stream, cursor, el, null, report.getData(), settings, width);
+                    tableRendered = true;
+                }
+            }
+
+            if (!tableRendered && report.getData() != null) {
+                for (Object row : report.getData()) {
+                    for (Report.ReportElement el : report.getDetail().getElements()) {
+                        addPdfElement(stream, cursor, el, row, report.getData(), settings, width);
+                    }
+                }
             }
 
             // Summary Section (Charts)
@@ -205,7 +217,8 @@ public class JettraPdfExporter {
                 }
             }
             cursor.moveTo(stream, targetX, cursor.y);
-            stream.append("(").append(escapePdf(tel.getExpression())).append(") Tj\n");
+            String expr = resolveExpression(tel.getExpression(), row);
+            stream.append("(").append(escapePdf(expr)).append(") Tj\n");
             
             if (el.isUnderline()) {
                 stream.append(String.format("%.2f %.2f m %.2f %.2f l S\n", targetX, cursor.y - 1.5f, targetX + estimatedWidth, cursor.y - 1.5f));
@@ -254,6 +267,20 @@ public class JettraPdfExporter {
         if (s == null) return "";
         // Basic escaping for PDF strings and ensuring ISO-8859-1 compatibility
         return s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)");
+    }
+
+    private static String resolveExpression(String expression, Object row) {
+        if (expression == null) return "";
+        if (row == null) return expression;
+        
+        if (expression.contains("$F{")) {
+            String fieldName = expression.substring(expression.indexOf("$F{") + 3, expression.indexOf("}"));
+            Object val = getFieldValue(row, fieldName);
+            return expression.replace("$F{" + fieldName + "}", val != null ? val.toString() : "");
+        }
+        
+        Object val = getFieldValue(row, expression);
+        return val != null ? val.toString() : expression;
     }
 
     private static Object getFieldValue(Object obj, String expression) {

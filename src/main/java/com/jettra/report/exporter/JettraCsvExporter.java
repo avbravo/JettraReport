@@ -13,7 +13,15 @@ public class JettraCsvExporter {
             Report.Table table = findTable(report);
 
             if (table != null) {
-                // Headers
+                // Report Header
+                for (Report.ReportElement el : report.getHeader().getElements()) {
+                    if (el instanceof Report.TextElement tel) {
+                        writer.println("\"" + tel.getExpression().replace("\"", "\"\"") + "\"");
+                    }
+                }
+                writer.println();
+
+                // Table Headers
                 StringBuilder sb = new StringBuilder();
                 List<Report.Column> columns = table.getColumns();
                 for (int i = 0; i < columns.size(); i++) {
@@ -35,6 +43,22 @@ public class JettraCsvExporter {
                         writer.println(sb.toString());
                     }
                 }
+            } else if (report.getData() != null) {
+                for (Object row : report.getData()) {
+                    for (Report.ReportElement el : report.getDetail().getElements()) {
+                        if (el instanceof Report.TextElement tel) {
+                            String expr = resolveExpression(tel.getExpression(), row);
+                            writer.println("\"" + expr.replace("\"", "\"\"") + "\"");
+                        }
+                    }
+                }
+            }
+            writer.println();
+            // Report Footer
+            for (Report.ReportElement el : report.getFooter().getElements()) {
+                if (el instanceof Report.TextElement tel) {
+                    writer.println("\"" + tel.getExpression().replace("\"", "\"\"") + "\"");
+                }
             }
         } catch (Exception e) {
             System.err.println("Error generating CSV: " + e.getMessage());
@@ -48,6 +72,20 @@ public class JettraCsvExporter {
             }
         }
         return null;
+    }
+
+    private static String resolveExpression(String expression, Object row) {
+        if (expression == null) return "";
+        if (row == null) return expression;
+        
+        if (expression.contains("$F{")) {
+            String fieldName = expression.substring(expression.indexOf("$F{") + 3, expression.indexOf("}"));
+            Object val = getFieldValue(row, fieldName);
+            return expression.replace("$F{" + fieldName + "}", val != null ? val.toString() : "");
+        }
+        
+        Object val = getFieldValue(row, expression);
+        return val != null ? val.toString() : expression;
     }
 
     private static Object getFieldValue(Object obj, String expression) {

@@ -13,7 +13,6 @@ public class JettraExcelExporter {
     public static void export(Report report, String path) {
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(path))) {
             Report.Table table = findTable(report);
-            if (table == null) return;
 
             List<String> sharedStrings = new ArrayList<>();
             String sheetXml = generateSheetXml(report, table, sharedStrings);
@@ -68,30 +67,77 @@ public class JettraExcelExporter {
         sb.append("<sheetData>\n");
 
         int rowIndex = 1;
-        // Headers
-        sb.append("<row r=\"").append(rowIndex).append("\">");
-        List<Report.Column> columns = table.getColumns();
-        for (int i = 0; i < columns.size(); i++) {
-            String val = columns.get(i).getHeader();
-            sb.append("<c r=\"").append(getColumnLetter(i)).append(rowIndex).append("\" t=\"s\">");
-            sb.append("<v>").append(getSharedStringIndex(sharedStrings, val)).append("</v>");
-            sb.append("</c>");
-        }
-        sb.append("</row>\n");
-        rowIndex++;
 
-        // Data
-        List<?> data = report.getData();
-        if (data != null) {
-            for (Object item : data) {
+        // Report Headers
+        for (Report.ReportElement el : report.getHeader().getElements()) {
+            if (el instanceof Report.TextElement tel) {
                 sb.append("<row r=\"").append(rowIndex).append("\">");
-                for (int i = 0; i < columns.size(); i++) {
-                    Object val = getFieldValue(item, columns.get(i).getDetailExpression());
-                    String sVal = val != null ? val.toString() : "";
-                    sb.append("<c r=\"").append(getColumnLetter(i)).append(rowIndex).append("\" t=\"s\">");
-                    sb.append("<v>").append(getSharedStringIndex(sharedStrings, sVal)).append("</v>");
-                    sb.append("</c>");
+                sb.append("<c r=\"A").append(rowIndex).append("\" t=\"s\">");
+                sb.append("<v>").append(getSharedStringIndex(sharedStrings, tel.getExpression())).append("</v>");
+                sb.append("</c>");
+                sb.append("</row>\n");
+                rowIndex++;
+            }
+        }
+        rowIndex++; // Empty row
+
+        // Detail Elements (Table)
+        boolean tableRendered = (table != null);
+
+        if (tableRendered) {
+            // Table Headers
+            sb.append("<row r=\"").append(rowIndex).append("\">");
+            List<Report.Column> columns = table.getColumns();
+            for (int i = 0; i < columns.size(); i++) {
+                String val = columns.get(i).getHeader();
+                sb.append("<c r=\"").append(getColumnLetter(i)).append(rowIndex).append("\" t=\"s\">");
+                sb.append("<v>").append(getSharedStringIndex(sharedStrings, val)).append("</v>");
+                sb.append("</c>");
+            }
+            sb.append("</row>\n");
+            rowIndex++;
+
+            // Data
+            List<?> data = report.getData();
+            if (data != null) {
+                for (Object item : data) {
+                    sb.append("<row r=\"").append(rowIndex).append("\">");
+                    for (int i = 0; i < columns.size(); i++) {
+                        Object val = getFieldValue(item, columns.get(i).getDetailExpression());
+                        String sVal = val != null ? val.toString() : "";
+                        sb.append("<c r=\"").append(getColumnLetter(i)).append(rowIndex).append("\" t=\"s\">");
+                        sb.append("<v>").append(getSharedStringIndex(sharedStrings, sVal)).append("</v>");
+                        sb.append("</c>");
+                    }
+                    sb.append("</row>\n");
+                    rowIndex++;
                 }
+            }
+        } else if (report.getData() != null) {
+            // Non-table details
+            for (Object row : report.getData()) {
+                for (Report.ReportElement el : report.getDetail().getElements()) {
+                    if (el instanceof Report.TextElement tel) {
+                        String val = resolveExpression(tel.getExpression(), row);
+                        sb.append("<row r=\"").append(rowIndex).append("\">");
+                        sb.append("<c r=\"A").append(rowIndex).append("\" t=\"s\">");
+                        sb.append("<v>").append(getSharedStringIndex(sharedStrings, val)).append("</v>");
+                        sb.append("</c>");
+                        sb.append("</row>\n");
+                        rowIndex++;
+                    }
+                }
+            }
+        }
+
+        rowIndex++; // Empty row
+        // Report Footers
+        for (Report.ReportElement el : report.getFooter().getElements()) {
+            if (el instanceof Report.TextElement tel) {
+                sb.append("<row r=\"").append(rowIndex).append("\">");
+                sb.append("<c r=\"A").append(rowIndex).append("\" t=\"s\">");
+                sb.append("<v>").append(getSharedStringIndex(sharedStrings, tel.getExpression())).append("</v>");
+                sb.append("</c>");
                 sb.append("</row>\n");
                 rowIndex++;
             }
@@ -147,6 +193,20 @@ public class JettraExcelExporter {
             }
         }
         return null;
+    }
+
+    private static String resolveExpression(String expression, Object row) {
+        if (expression == null) return "";
+        if (row == null) return expression;
+        
+        if (expression.contains("$F{")) {
+            String fieldName = expression.substring(expression.indexOf("$F{") + 3, expression.indexOf("}"));
+            Object val = getFieldValue(row, fieldName);
+            return expression.replace("$F{" + fieldName + "}", val != null ? val.toString() : "");
+        }
+        
+        Object val = getFieldValue(row, expression);
+        return val != null ? val.toString() : expression;
     }
 
     private static Object getFieldValue(Object obj, String expression) {

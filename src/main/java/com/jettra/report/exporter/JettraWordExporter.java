@@ -53,8 +53,20 @@ public class JettraWordExporter {
         }
 
         // Detail Elements
+        boolean tableRendered = false;
         for (Report.ReportElement el : report.getDetail().getElements()) {
-            addWordElement(sb, el, null, report.getData());
+            if (el instanceof Report.Table) {
+                addWordElement(sb, el, null, report.getData());
+                tableRendered = true;
+            }
+        }
+        
+        if (!tableRendered && report.getData() != null) {
+            for (Object row : report.getData()) {
+                for (Report.ReportElement el : report.getDetail().getElements()) {
+                    addWordElement(sb, el, row, report.getData());
+                }
+            }
         }
 
         // Footer Elements
@@ -92,7 +104,7 @@ public class JettraWordExporter {
             }
             sb.append("</w:rPr>");
             
-            sb.append("<w:t>").append(escapeXml(tel.getExpression())).append("</w:t></w:r></w:p>");
+            sb.append("<w:t>").append(escapeXml(resolveExpression(tel.getExpression(), row))).append("</w:t></w:r></w:p>");
         } else if (el instanceof Report.Table table) {
             sb.append("<w:tbl>");
             sb.append("<w:tblPr><w:tblW w:w=\"0\" w:type=\"auto\"/><w:tblBorders><w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/><w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/><w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/><w:right w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/><w:insideH w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/><w:insideV w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/></w:tblBorders></w:tblPr>");
@@ -117,6 +129,20 @@ public class JettraWordExporter {
             }
             sb.append("</w:tbl>");
         }
+    }
+
+    private static String resolveExpression(String expression, Object row) {
+        if (expression == null) return "";
+        if (row == null) return expression;
+        
+        if (expression.contains("$F{")) {
+            String fieldName = expression.substring(expression.indexOf("$F{") + 3, expression.indexOf("}"));
+            Object val = getFieldValue(row, fieldName);
+            return expression.replace("$F{" + fieldName + "}", val != null ? val.toString() : "");
+        }
+        
+        Object val = getFieldValue(row, expression);
+        return val != null ? val.toString() : expression;
     }
 
     private static String escapeXml(String s) {
