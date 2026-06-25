@@ -1,9 +1,10 @@
-package com.jettra.report.ui;
+package io.jettra.report.ui;
 
 import io.jettra.wui.complex.Center;
 import io.jettra.wui.components.*;
 import io.jettra.wui.core.JettraDashboardPage;
 import java.util.Map;
+
 
 /**
  * Visual designer for JettraReport.

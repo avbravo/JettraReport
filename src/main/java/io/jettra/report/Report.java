@@ -1,6 +1,9 @@
-package com.jettra.report;
+package io.jettra.report;
 
-import com.jettra.report.exporter.*;
+import io.jettra.report.exporter.JettraCsvExporter;
+import io.jettra.report.exporter.JettraExcelExporter;
+import io.jettra.report.exporter.JettraWordExporter;
+import io.jettra.report.exporter.JettraPdfExporter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;

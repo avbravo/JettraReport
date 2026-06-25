@@ -1,4 +1,4 @@
-package com.jettra.report.annotations;
+package io.jettra.report.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
@@ -7,20 +7,20 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to define a custom report footer at the class level.
- * Configures font style, orientation/alignment, text color, size, and layout decorations.
+ * Annotation to define a custom report header at the class level.
+ * Configures font style, orientation/alignment, text color, size, layout, and report type.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@Repeatable(ModelReportFooters.class)
-public @interface ModelReportFooter {
+@Repeatable(ModelReportHeaders.class)
+public @interface ModelReportHeader {
     /**
-     * The custom text/label of the footer.
+     * The custom text/label of the header. Replaces the default class name header.
      */
     String value() default "";
 
     /**
-     * Alternative to value() for specifying the footer text/label.
+     * Alternative to value() for specifying the header text/label.
      */
     String label() default "";
 
@@ -37,7 +37,7 @@ public @interface ModelReportFooter {
     }
 
     /**
-     * Alignment/Orientation of the footer text (LEFT, CENTER, RIGHT).
+     * Alignment/Orientation of the header text (LEFT, CENTER, RIGHT).
      */
     Orientation orientation() default Orientation.LEFT;
 
@@ -47,9 +47,9 @@ public @interface ModelReportFooter {
     String font() default "Helvetica";
 
     /**
-     * Font size of the custom footer.
+     * Font size of the custom header.
      */
-    int size() default 10;
+    int size() default 14;
 
     /**
      * Hexadecimal text color (e.g. #000000, #ff0000).
@@ -62,7 +62,7 @@ public @interface ModelReportFooter {
     Style[] style() default {};
 
     /**
-     * Defines which report type this footer applies to (NORMAL, MASTER, DETAILS).
+     * Defines which report type this header applies to (NORMAL, MASTER, DETAILS).
      */
     ReportType type() default ReportType.NORMAL;
 }

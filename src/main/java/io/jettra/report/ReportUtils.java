@@ -1,4 +1,4 @@
-package com.jettra.report;
+package io.jettra.report;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

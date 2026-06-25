@@ -1,6 +1,6 @@
-package com.jettra.report.exporter;
+package io.jettra.report.exporter;
 
-import com.jettra.report.Report;
+import io.jettra.report.Report;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -284,6 +284,6 @@ public class JettraPdfExporter {
     }
 
     private static Object getFieldValue(Object obj, String expression) {
-        return com.jettra.report.ReportUtils.getFieldValue(obj, expression);
+        return io.jettra.report.ReportUtils.getFieldValue(obj, expression);
     }
 }

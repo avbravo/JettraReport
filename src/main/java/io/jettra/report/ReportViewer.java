@@ -1,4 +1,4 @@
-package com.jettra.report;
+package io.jettra.report;
 
 import io.jettra.wui.complex.*;
 import io.jettra.wui.components.*;
