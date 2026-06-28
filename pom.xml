@@ -16,8 +16,8 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>io.jettra.wui</groupId>
+       <dependency>
+            <groupId>io.jettra</groupId>
             <artifactId>JettraWUI</artifactId>
           <version>${jettra.wui.version}</version>
             <scope>provided</scope>

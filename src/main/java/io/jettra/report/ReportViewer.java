@@ -1,8 +1,16 @@
 package io.jettra.report;
 
-import io.jettra.wui.complex.*;
-import io.jettra.wui.components.*;
-import java.lang.reflect.Field;
+import io.jettra.wui.complex.Datatable;
+import io.jettra.wui.complex.Image;
+import io.jettra.wui.complex.Modal;
+import io.jettra.wui.components.Button;
+import io.jettra.wui.components.Div;
+import io.jettra.wui.components.Paragraph;
+import io.jettra.wui.components.Row;
+import io.jettra.wui.components.SelectOne;
+import io.jettra.wui.components.TD;
+
+
 
 public class ReportViewer extends Modal {
     
