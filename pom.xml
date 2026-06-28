@@ -6,20 +6,20 @@
 
     <groupId>io.jettra</groupId>
     <artifactId>JettraReport</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-         <jettra.wui.version>1.0-SNAPSHOT</jettra.wui.version>
+         <jettra.wui.version>1.0.0-SNAPSHOT</jettra.wui.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.jettra.wui</groupId>
             <artifactId>JettraWUI</artifactId>
-            <version>${jettra.wui.version}</version>
+          <version>${jettra.wui.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
