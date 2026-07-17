@@ -1,72 +1,99 @@
 package io.jettra.report.ui;
 
-import io.jettra.wui.complex.Center;
-import io.jettra.wui.components.*;
-import io.jettra.wui.core.JettraDashboardPage;
-import java.util.Map;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import io.jettra.flux.core.Modifier;
+import io.jettra.flux.core.Widget;
+import io.jettra.flux.theme.ThemeData;
+import io.jettra.flux.theme.Themes;
+import io.jettra.flux.widgets.Button;
+import io.jettra.flux.widgets.Card;
+import io.jettra.flux.widgets.Div;
+import io.jettra.flux.widgets.Header;
+import io.jettra.flux.widgets.Scaffold;
+import io.jettra.flux.widgets.Span;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Visual designer for JettraReport.
- * Integrated with JettraWebDesigner.
+ * Integrated with JettraWebDesigner using JettraFlux.
  */
-public class ReportDesignerPage extends JettraDashboardPage {
-
-    public ReportDesignerPage() {
-        super("Report Designer - JettraReport");
-    }
+public class ReportDesignerPage implements HttpHandler {
 
     @Override
-    protected void initCenter(Center center, String username) {
-        Div layout = new Div().setStyle("display", "flex").setStyle("gap", "20px").setStyle("height", "100%");
+    public void handle(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+        if ("POST".equalsIgnoreCase(method)) {
+            // handle post logic
+        }
+        
+        ThemeData theme = Themes.AstTheme();
         
         // Sidebar - Tools
-        Div toolbar = new Div().setStyle("width", "250px").setStyle("background", "var(--jettra-bg-secondary)").setStyle("padding", "15px");
-        toolbar.add(new Header(4, "Report Elements"));
-        toolbar.add(createToolButton("Text Field", "🔤"));
-        toolbar.add(createToolButton("Date Field", "📅"));
-        toolbar.add(createToolButton("Numeric Field", "🔢"));
-        toolbar.add(createToolButton("Table", "▦"));
-        toolbar.add(createToolButton("Image", "🖼️"));
-        toolbar.add(createToolButton("Chart", "📊"));
-        toolbar.add(createToolButton("Subreport", "📋"));
-        toolbar.add(createToolButton("Subtotal", "Σ"));
-        
+        Widget toolbar = Div.of(
+            Header.of(4, "Report Elements"),
+            createToolButton("Text Field", "🔤"),
+            createToolButton("Date Field", "📅"),
+            createToolButton("Numeric Field", "🔢"),
+            createToolButton("Table", "▦"),
+            createToolButton("Image", "🖼️"),
+            createToolButton("Chart", "📊"),
+            createToolButton("Subreport", "📋"),
+            createToolButton("Subtotal", "Σ")
+        ).modifier(new Modifier()
+            .style("width: 250px; background: var(--surface-color); padding: 15px;"));
+
         // Canvas - Report Structure
-        Card canvas = new Card().setTitle("Report Canvas").setWidth("100%");
-        Div sections = new Div().setStyle("padding", "10px");
-        sections.add(createSectionBox("Page Header", "#f0f0f0"));
-        sections.add(createSectionBox("Column Header", "#e0e0e0"));
-        sections.add(createSectionBox("Detail", "#ffffff"));
-        sections.add(createSectionBox("Column Footer", "#e0e0e0"));
-        sections.add(createSectionBox("Page Footer", "#f0f0f0"));
-        sections.add(createSectionBox("Summary", "#d0d0d0"));
+        Widget sections = Div.of(
+            createSectionBox("Page Header", "#f0f0f0"),
+            createSectionBox("Column Header", "#e0e0e0"),
+            createSectionBox("Detail", "#ffffff"),
+            createSectionBox("Column Footer", "#e0e0e0"),
+            createSectionBox("Page Footer", "#f0f0f0"),
+            createSectionBox("Summary", "#d0d0d0")
+        ).modifier(new Modifier().style("padding: 10px;"));
         
-        canvas.add(sections);
+        // Use Div.of instead of Card.title since title is a modifier attribute in some cases, or maybe we can just use Card.of and no title if Card has no title method.
+        Widget canvas = Card.of(sections)
+            .modifier(new Modifier().attribute("title", "Report Canvas").style("width: 100%;"));
         
-        layout.add(toolbar).add(canvas);
-        center.add(new Div().setStyle("padding", "20px").setStyle("height", "calc(100vh - 100px)").add(layout));
+        Widget layout = Div.of(toolbar, canvas)
+            .modifier(new Modifier().style("display: flex; gap: 20px; height: 100%;"));
+            
+        Widget centerContent = Div.of(layout)
+            .modifier(new Modifier().style("padding: 20px; height: calc(100vh - 100px);"));
+            
+        Scaffold scaffold = Scaffold.of().body(centerContent);
+        
+        String html = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n" +
+                "<meta charset=\"utf-8\" />\n" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" +
+                "<title>Report Designer - JettraReport</title>\n" +
+                theme.generateGlobalCss() + "\n" +
+                "</head>\n<body style=\"margin: 0; padding: 0; box-sizing: border-box; background-color: var(--background-color);\">\n" +
+                scaffold.render(theme) + "\n" +
+                "</body>\n</html>";
+
+        byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+        exchange.sendResponseHeaders(200, bytes.length);
+        exchange.getResponseBody().write(bytes);
+        exchange.getResponseBody().close();
     }
 
-    private Button createToolButton(String label, String icon) {
-        return new Button(icon + " " + label)
-            .setStyle("width", "100%")
-            .setStyle("margin-bottom", "10px")
-            .setStyle("justify-content", "flex-start")
-            .addClass("j-btn");
+    private Widget createToolButton(String label, String icon) {
+        return Button.of(icon + " " + label)
+            .modifier(new Modifier()
+                .cssClass("j-btn")
+                .style("width: 100%; margin-bottom: 10px; justify-content: flex-start;"));
     }
 
-    private Div createSectionBox(String title, String color) {
-        return new Div()
-            .setStyle("border", "1px dashed #ccc")
-            .setStyle("padding", "20px")
-            .setStyle("margin-bottom", "5px")
-            .setStyle("background-color", color)
-            .add(new Span(title).setStyle("font-weight", "bold").setStyle("color", "#333"));
-    }
-
-    @Override
-    protected void onPost(Map<String, String> params) {
-        // Save design logic
+    private Widget createSectionBox(String title, String color) {
+        return Div.of(
+            Span.of(title).modifier(new Modifier().style("font-weight: bold; color: #333;"))
+        ).modifier(new Modifier()
+            .style("border: 1px dashed #ccc; padding: 20px; margin-bottom: 5px; background-color: " + color + ";"));
     }
 }

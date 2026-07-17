@@ -16,10 +16,10 @@
     </properties>
 
     <dependencies>
-       <dependency>
+        <dependency>
             <groupId>io.jettra</groupId>
-            <artifactId>JettraWUI</artifactId>
-          <version>${jettra.wui.version}</version>
+            <artifactId>JettraFlux</artifactId>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
